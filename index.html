@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>RP Companion (Serverless)</title>
+    
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUlAgQ29tcGFuaW9uIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJzdGFydF91cmwiOiIvIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiMxYTFhMWEiLCJpY29ucyI6W3sic3JjIjoiaHR0cHM6Ly9waWNzdW0ucGhvdG9zLzE5MiIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9qcGVnIn1dfQ==">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #3b82f6;
+            --primary-text: #ffffff;
+            --secondary-text: #b0b0b0;
+            --accent-user: #2563eb;
+            --accent-ai: #374151;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border-color: #333;
+            --nav-height: 60px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body {
+            margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Layout & Typography */
+        h1, h2, h3 { margin: 0 0 10px 0; font-weight: 600; }
+        p { margin: 0 0 10px 0; line-height: 1.5; color: var(--secondary-text); }
+        code { background: #333; padding: 2px 4px; border-radius: 4px; color: #ff9f43; font-family: monospace; }
+        
+        /* Views Management */
+        .view {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 100px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .view.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: var(--nav-height);
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            width: 20%;
+            transition: color 0.2s;
+        }
+
+        .nav-btn.active { color: var(--primary-color); }
+        .nav-btn svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+
+        /* Form Elements */
+        input, select, textarea {
+            width: 100%;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
+        
+        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--secondary-text); font-weight: 500; }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.8; }
+        .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .btn-secondary { background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--secondary-text); }
+        .btn-small { padding: 6px 12px; font-size: 0.85rem; width: auto; display: inline-block; }
+
+        /* Settings Screen */
+        .setting-group { background: var(--surface-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .range-value { float: right; color: var(--primary-color); font-weight: bold; }
+
+        /* Story Bible */
+        .status-bar { font-size: 0.8rem; text-align: right; margin-top: -10px; margin-bottom: 10px; color: var(--success); }
+
+        /* Character List */
+        .char-item {
+            display: flex;
+            align-items: center;
+            background: var(--surface-color);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 5px solid transparent;
+            cursor: pointer;
+        }
+        .char-item.active-char { border-left-color: var(--success); background: #252525; }
+        .char-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; background-color: #444; flex-shrink: 0; }
+        .char-info { flex: 1; overflow: hidden; }
+        .char-name { font-weight: bold; font-size: 1rem; }
+        .char-personality { font-size: 0.85rem; color: var(--secondary-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Edit Button Style */
+        .char-edit-btn {
+            background: transparent;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 8px;
+            margin-left: 10px;
+            border-radius: 4px;
+        }
+        .char-edit-btn:hover { color: var(--primary-color); background: rgba(255,255,255,0.1); }
+        .char-edit-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* Chapter Tabs */
+        .chapter-nav { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px; }
+        .chapter-tab {
+            background: var(--surface-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+        }
+        .chapter-tab.active { background: var(--primary-color); border-color: var(--primary-color); }
+        .note-area { background-color: #1a2e1a; border-color: #2f4f2f; }
+
+        /* --- CHAT INTERFACE FIX (Flexbox) --- */
+        #view-chat {
+            display: none; 
+            flex-direction: column; 
+            height: 100%; 
+            padding: 0; 
+            overflow: hidden; 
+        }
+        
+        #view-chat.active {
+            display: flex;
+        }
+
+        .chat-header {
+            padding: 10px 15px;
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex-shrink: 0; 
+        }
+        .chat-header-row { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+
+        #chat-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            padding: 15px; 
+            scroll-behavior: smooth; 
+        }
+        
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; position: relative; }
+        .msg-user { align-self: flex-end; background-color: var(--accent-user); color: white; border-bottom-right-radius: 2px; }
+        .msg-ai { align-self: flex-start; background-color: var(--accent-ai); color: #e5e5e5; border-bottom-left-radius: 2px; }
+        .msg-context-dimmed { opacity: 0.4; filter: grayscale(0.8); }
+
+        .chat-input-area {
+            background: var(--surface-color);
+            padding: 10px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-shrink: 0; 
+        }
+        
+        /* NEW: Footer with wrapping support */
+        .chat-footer-buttons {
+            text-align:center; 
+            padding: 10px 5px; 
+            background:#121212; 
+            display:flex; 
+            justify-content:center; 
+            gap: 8px; 
+            border-top: 1px solid #222; 
+            flex-shrink: 0;
+            flex-wrap: wrap; /* Allows buttons to stack on small screens */
+        }
+
+        .token-indicator { font-size: 0.75rem; color: var(--secondary-text); }
+        .token-warning { color: orange; font-weight: bold; }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; color: var(--secondary-text); padding: 0; }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom Toast */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 12px;
+            position: fixed;
+            z-index: 300;
+            left: 50%;
+            bottom: 80px;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 80px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 80px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    </style>
+</head>
+<body>
+
+    <!-- SETTINGS SCREEN -->
+    <main id="view-settings" class="view">
+        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.0 Backup Added)</span></h2>
+        <div class="setting-group">
+            <label>API Provider</label>
+            <select id="setting-provider">
+                <option value="mancer">Mancer (glm-4.7)</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="anthropic">Anthropic (Direct)</option>
+                <option value="openai">OpenAI (Direct)</option>
+            </select>
+            <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
+                Select your AI provider. API keys are configured on the server.
+            </p>
+        </div>
+
+        <div class="setting-group">
+            <label>API Keys</label>
+            <p style="font-size: 0.85rem; color: var(--secondary-text); margin-bottom:0; padding:10px; background:#1a2a1a; border-radius:6px;">
+                ✅ API keys are stored securely on the server. You don't need to enter any keys - just select your provider and start chatting!
+            </p>
+        </div>
+
+        <div class="setting-group">
+            <label>Model Name</label>
+            <input type="text" id="setting-model" value="glm-4.7" oninput="debounceSaveSettings()">
+            <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
+                Examples: <code>glm-4.7</code> (Mancer), <code>anthropic/claude-3-haiku</code> (OpenRouter), <code>gpt-3.5-turbo</code> (OpenAI)
+            </p>
+        </div>
+
+        <div class="setting-group">
+            <div class="toggle-row">
+                <label style="margin:0">Include Story Bible in Context</label>
+                <input type="checkbox" id="setting-bible-toggle" checked onchange="saveSettings()">
+            </div>
+            <label>Context Window Size (Message Pairs)</label>
+            <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
+            <span class="range-value" id="ctx-val">15</span>
+        </div>
+
+        <div class="setting-group">
+            <h3>System Prompt Template</h3>
+            <p style="font-size: 0.8rem; color: var(--secondary-text); margin-bottom:10px;">
+                Edit how the AI prompt is constructed. Use tags like <code>{{bible}}</code>, <code>{{char}}</code>, <code>{{summary}}</code>.
+            </p>
+            <textarea id="setting-sys-template" rows="8" style="font-family: monospace; font-size: 0.8rem; white-space: pre;" oninput="debounceSaveSettings()"></textarea>
+            <div style="margin-top: 10px;">
+                <button class="btn btn-secondary btn-small" onclick="resetSystemTemplate()">Reset to Default</button>
+            </div>
+        </div>
+        <button class="btn btn-secondary" onclick="previewSystemPrompt()">Preview System Prompt</button>
+        <br><br>
+
+        <!-- BACKUP & RESTORE SECTION -->
+        <div class="setting-group">
+            <h3>💾 Backup & Restore</h3>
+            <p style="font-size:0.85rem; margin-bottom:15px;">Save all your data (characters, bible, chapters, chat history, settings) to a file on your device, or restore from a previous backup.</p>
+            
+            <label>What gets saved in a backup:</label>
+            <p style="font-size:0.8rem; background:#1a2a1a; padding:10px; border-radius:6px; margin-bottom:15px;">
+                ✅ All Characters &nbsp;|&nbsp; ✅ Story Bible &nbsp;|&nbsp; ✅ All Chapters<br>
+                ✅ All Chat History &nbsp;|&nbsp; ✅ Settings &nbsp;|&nbsp; ✅ System Prompt Template
+            </p>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-small" onclick="exportStateJSON()" style="flex:1; min-width:130px;">
+                    💾 Save Backup
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()" style="flex:1; min-width:130px; border-color:#3b82f6; color:#3b82f6;">
+                    📂 Load Backup
+                </button>
+            </div>
+            <p style="font-size:0.75rem; color:#666; margin-top:10px; margin-bottom:0;">
+                ⚠️ Loading a backup will replace ALL current data.
+            </p>
+        </div>
+
+        <!-- Also keep Export Chat here for convenience -->
+        <div class="setting-group">
+            <h3>💬 Export Chat</h3>
+            <p style="font-size:0.85rem; margin-bottom:15px;">Export the current chapter's chat as a plain text file.</p>
+            <button class="btn btn-secondary" onclick="exportChat()">💬 Export Current Chat (.txt)</button>
+        </div>
+
+        <br>
+    </main>
+
+    <!-- STORY BIBLE SCREEN -->
+    <main id="view-bible" class="view">
+        <h2>Story Bible</h2>
+        <p>World rules, setting, and lore.</p>
+        <textarea id="bible-input" rows="15" placeholder="Write your world lore here..." oninput="debounceSaveBible()"></textarea>
+        <div class="status-bar" id="bible-status">Saved ✓</div>
+        <div class="status-bar" id="bible-count">0 / 5000</div>
+    </main>
+
+    <!-- CHARACTERS SCREEN -->
+    <main id="view-characters" class="view">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2>Characters</h2>
+            <button class="btn btn-small" onclick="openCharModal()">+ Add New</button>
+        </div>
+        <div id="character-list">
+            <!-- Characters injected here -->
+        </div>
+    </main>
+
+    <!-- CHAPTERS SCREEN -->
+    <main id="view-chapters" class="view">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2>Chapters</h2>
+            <button class="btn btn-small" onclick="addChapter()">+ New Chapter</button>
+        </div>
+        
+        <div class="chapter-nav" id="chapter-tabs">
+            <!-- Chapter tabs injected here -->
+        </div>
+
+        <div id="chapter-editor">
+            <label>Chapter Title</label>
+            <input type="text" id="chapter-title" oninput="debounceSaveChapters()">
+            <label>Summary (Sent to AI)</label>
+            <textarea id="chapter-summary" rows="4" placeholder="Brief summary of current events..." oninput="debounceSaveChapters()"></textarea>
+            <label>Author Notes (Private)</label>
+            <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
+            <br>
+            <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
+        </div>
+    </main>
+
+    <!-- CHAT SCREEN -->
+    <main id="view-chat" class="view">
+        <div class="chat-header">
+            <div class="chat-header-row">
+                <strong id="chat-active-name">No Active Character</strong>
+                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px; font-size:0.75rem;">Clear</button>
+            </div>
+            <span id="chat-active-persona" style="font-size:0.8rem; color:var(--secondary-text); margin-top:4px;">Select a character to begin.</span>
+        </div>
+    
+        <div id="chat-container">
+            <div style="text-align:center; color:var(--secondary-text); margin-top:50px;">
+                <p>Start a new roleplay session.</p>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <textarea id="chat-input" rows="1" placeholder="Type a message..." style="margin-bottom:0; resize:none; max-height: 120px; overflow-y:auto;" oninput="autoResizeTextarea(this)" onkeydown="checkEnter(event)"></textarea>
+            <button class="btn btn-small" id="send-btn" style="height: 48px; width: 48px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+        
+        <!-- UPDATED FOOTER -->
+        <!-- Hidden file input for restore -->
+        <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="restoreStateJSON(event)">
+        <div class="chat-footer-buttons">
+            <button class="btn btn-secondary btn-small" onclick="clearChatHistory()">🗑 Clear Chat</button>
+            <button class="btn btn-secondary btn-small" onclick="exportChat()">💬 Export Chat (.txt)</button>
+            <button class="btn btn-secondary btn-small" onclick="exportStateJSON()">💾 Backup All (.json)</button>
+            <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()">📂 Restore Backup</button>
+        </div>
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav>
+        <button class="nav-btn" onclick="navTo('settings')" id="nav-settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Settings
+        </button>
+        <button class="nav-btn" onclick="navTo('bible')" id="nav-bible">
+            <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+            Bible
+        </button>
+        <button class="nav-btn" onclick="navTo('characters')" id="nav-characters">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Cast
+        </button>
+        <button class="nav-btn" onclick="navTo('chapters')" id="nav-chapters">
+            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            Chapters
+        </button>
+        <button class="nav-btn active" onclick="navTo('chat')" id="nav-chat">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            Chat
+        </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast">Message</div>
+
+    <!-- CHARACTER MODAL -->
+    <div id="char-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Character Details</h3>
+                <button class="close-btn" onclick="closeCharModal()">&times;</button>
+            </div>
+            <input type="hidden" id="char-id">
+            <label>Name</label>
+            <input type="text" id="char-name" placeholder="Character Name">
+            <label>Personality / Description</label>
+            <textarea id="char-desc" rows="4" placeholder="How does the character behave?"></textarea>
+            <div style="margin-top:15px;">
+                <button class="btn" onclick="saveCharacter()">Save Character</button>
+                <button class="btn btn-danger btn-small hidden" id="btn-delete-char" onclick="deleteCharacter()" style="float:right; width:auto;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// RP Companion - Frontend v1.1.1 - Fixed & Debugged
+console.log('RP Companion Frontend v1.1.1 loaded successfully');
+
+// --- STATE MANAGEMENT ---
+const defaultState = {
+    provider: 'mancer',
+    model: 'glm-4.7',
+    bible: '',
+    systemTemplate: `You are {{char}}. \n\n{{bible}}\n\nCurrent Context: {{summary}}`,
+    bibleToggle: true,
+    contextWindow: 15,
+    characters: [],
+    activeCharId: null,
+    chapters: [],
+    activeChapterId: null,
+    chatHistory: {}
+};
+
+let state = JSON.parse(localStorage.getItem('rp-companion-state')) || JSON.parse(JSON.stringify(defaultState));
+let saveTimeout;
+
+// --- NAVIGATION ---
+function navTo(viewId) {
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('nav-' + viewId).classList.add('active');
+    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+    document.getElementById('view-' + viewId).classList.add('active');
+    if(viewId === 'chat') renderChat();
+}
+
+// --- UTILS ---
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.className = "show";
+    t.innerText = msg;
+    setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function saveState() {
+    localStorage.setItem('rp-companion-state', JSON.stringify(state));
+}
+
+function saveSettings() {
+    state.provider = document.getElementById('setting-provider').value;
+    state.model = document.getElementById('setting-model').value;
+    state.systemTemplate = document.getElementById('setting-sys-template').value;
+    state.bibleToggle = document.getElementById('setting-bible-toggle').checked;
+    state.contextWindow = parseInt(document.getElementById('setting-context').value);
+    saveState();
+}
+
+function debounceSaveSettings() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        saveSettings();
+        showToast("Settings saved");
+    }, 1000);
+}
+
+// --- SETTINGS LOGIC ---
+function initSettings() {
+    document.getElementById('setting-provider').value = state.provider || 'mancer';
+    document.getElementById('setting-model').value = state.model || 'glm-4.7';
+    document.getElementById('setting-sys-template').value = state.systemTemplate || defaultState.systemTemplate;
+    document.getElementById('setting-bible-toggle').checked = state.bibleToggle;
+    document.getElementById('setting-context').value = state.contextWindow;
+    document.getElementById('ctx-val').innerText = state.contextWindow;
+    handleProviderChange();
+}
+
+function handleProviderChange() {
+    const provider = document.getElementById('setting-provider').value;
+    const modelInput = document.getElementById('setting-model');
+    
+    if (provider === 'openrouter') {
+        if(state.provider !== 'openrouter') modelInput.value = "anthropic/claude-3-haiku";
+    } else if (provider === 'anthropic') {
+        if(state.provider !== 'anthropic') modelInput.value = "claude-3-haiku-20240307";
+    } else if (provider === 'openai') {
+        if(state.provider !== 'openai') modelInput.value = "gpt-3.5-turbo";
+    } else if (provider === 'mancer') {
+        if(state.provider !== 'mancer') modelInput.value = "glm-4.7";
+    }
+    debounceSaveSettings();
+}
+
+function updateRangeValue() {
+    document.getElementById('ctx-val').innerText = document.getElementById('setting-context').value;
+    debounceSaveSettings();
+}
+
+function resetSystemTemplate() {
+    if(confirm("Reset template to default?")) {
+        document.getElementById('setting-sys-template').value = defaultState.systemTemplate;
+        debounceSaveSettings();
+    }
+}
+
+function previewSystemPrompt() {
+    alert("Preview:\n\n" + constructSystemPrompt());
+}
+
+// --- BIBLE LOGIC ---
+function initBible() {
+    const bibleInput = document.getElementById('bible-input');
+    bibleInput.value = state.bible || '';
+    updateBibleCount();
+}
+
+function debounceSaveBible() {
+    document.getElementById('bible-status').innerText = "Typing...";
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        state.bible = document.getElementById('bible-input').value;
+        saveState();
+        document.getElementById('bible-status').innerText = "Saved ✓";
+        updateBibleCount();
+    }, 1000);
+}
+
+function updateBibleCount() {
+    const len = (state.bible || "").length;
+    const el = document.getElementById('bible-count');
+    el.innerText = `${len} chars`;
+    if(len > 4000) el.style.color = 'orange';
+    else el.style.color = 'var(--success)';
+}
+
+// --- CHARACTER LOGIC ---
+function initCharacters() {
+    renderCharacterList();
+}
+
+function renderCharacterList() {
+    const container = document.getElementById('character-list');
+    container.innerHTML = '';
+    
+    state.characters.forEach(char => {
+        const el = document.createElement('div');
+        el.className = `char-item ${state.activeCharId === char.id ? 'active-char' : ''}`;
+        el.onclick = () => selectCharacter(char.id);
+        
+        el.innerHTML = `
+            <div class="char-avatar"></div>
+            <div class="char-info">
+                <div class="char-name">${char.name}</div>
+                <div class="char-personality">${char.desc}</div>
+            </div>
+            <button class="char-edit-btn" onclick="event.stopPropagation(); openCharModal('${char.id}')" title="Edit Character">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </button>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function openCharModal(charId = null) {
+    const modal = document.getElementById('char-modal');
+    const nameInput = document.getElementById('char-name');
+    const descInput = document.getElementById('char-desc');
+    const idInput = document.getElementById('char-id');
+    const delBtn = document.getElementById('btn-delete-char');
+
+    if (charId) {
+        const char = state.characters.find(c => c.id === charId);
+        nameInput.value = char.name;
+        descInput.value = char.desc;
+        idInput.value = char.id;
+        delBtn.classList.remove('hidden');
+    } else {
+        nameInput.value = '';
+        descInput.value = '';
+        idInput.value = '';
+        delBtn.classList.add('hidden');
+    }
+    modal.classList.add('open');
+}
+
+function closeCharModal() {
+    document.getElementById('char-modal').classList.remove('open');
+}
+
+function saveCharacter() {
+    const id = document.getElementById('char-id').value;
+    const name = document.getElementById('char-name').value;
+    const desc = document.getElementById('char-desc').value;
+
+    if(!name) return alert("Name required");
+
+    if (id) {
+        const char = state.characters.find(c => c.id === id);
+        char.name = name;
+        char.desc = desc;
+    } else {
+        state.characters.push({
+            id: generateId(),
+            name: name,
+            desc: desc
+        });
+    }
+    saveState();
+    renderCharacterList();
+    closeCharModal();
+}
+
+function deleteCharacter() {
+    const id = document.getElementById('char-id').value;
+    if(confirm("Delete this character?")) {
+        state.characters = state.characters.filter(c => c.id !== id);
+        if(state.activeCharId === id) {
+            state.activeCharId = null;
+        }
+        saveState();
+        renderCharacterList();
+        closeCharModal();
+    }
+}
+
+function selectCharacter(id) {
+    state.activeCharId = id;
+    saveState();
+    renderCharacterList();
+    navTo('chat');
+}
+
+// --- CHAPTERS LOGIC ---
+function initChapters() {
+    if(!state.chapters || state.chapters.length === 0) {
+        addChapter();
+    }
+    renderChapterTabs();
+}
+
+function renderChapterTabs() {
+    const container = document.getElementById('chapter-tabs');
+    container.innerHTML = '';
+    
+    state.chapters.forEach(ch => {
+        const el = document.createElement('button');
+        el.className = `chapter-tab ${state.activeChapterId === ch.id ? 'active' : ''}`;
+        el.innerText = ch.title || "Untitled";
+        el.onclick = () => loadChapter(ch.id);
+        container.appendChild(el);
+    });
+    
+    if(state.activeChapterId) {
+        loadChapter(state.activeChapterId);
+    } else if(state.chapters.length > 0) {
+        loadChapter(state.chapters[0].id);
+    }
+}
+
+function addChapter() {
+    const newCh = {
+        id: generateId(),
+        title: "New Chapter",
+        summary: "",
+        notes: ""
+    };
+    state.chapters.push(newCh);
+    state.activeChapterId = newCh.id;
+    state.chatHistory[newCh.id] = [];
+    saveState();
+    renderChapterTabs();
+    loadChapter(newCh.id);
+}
+
+function loadChapter(id) {
+    state.activeChapterId = id;
+    const ch = state.chapters.find(c => c.id === id);
+    document.getElementById('chapter-title').value = ch.title;
+    document.getElementById('chapter-summary').value = ch.summary;
+    document.getElementById('chapter-notes').value = ch.notes;
+    if(!state.chatHistory[id]) state.chatHistory[id] = [];
+    saveState();
+}
+
+function debounceSaveChapters() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        const ch = state.chapters.find(c => c.id === state.activeChapterId);
+        if(ch) {
+            ch.title = document.getElementById('chapter-title').value;
+            ch.summary = document.getElementById('chapter-summary').value;
+            ch.notes = document.getElementById('chapter-notes').value;
+            saveState();
+            renderChapterTabs();
+        }
+    }, 500);
+}
+
+function deleteCurrentChapter() {
+    if(state.chapters.length <= 1) return alert("You must have at least one chapter.");
+    if(confirm("Delete this chapter and its history?")) {
+        const idx = state.chapters.findIndex(c => c.id === state.activeChapterId);
+        state.chapters.splice(idx, 1);
+        delete state.chatHistory[state.activeChapterId];
+        state.activeChapterId = state.chapters[0].id;
+        saveState();
+        renderChapterTabs();
+        loadChapter(state.activeChapterId);
+    }
+}
+
+// --- CHAT LOGIC ---
+function constructSystemPrompt() {
+    const char = state.characters.find(c => c.id === state.activeCharId);
+    const charDesc = char ? `${char.name}: ${char.desc}` : "Unknown Character";
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    const summary = ch ? ch.summary : "No context";
+    
+    let bibleText = "";
+    if(state.bibleToggle) {
+        bibleText = state.bible || "";
+    }
+
+    let template = state.systemTemplate || defaultState.systemTemplate;
+    
+    return template
+        .replace('{{bible}}', bibleText)
+        .replace('{{char}}', charDesc)
+        .replace('{{summary}}', summary);
+}
+
+function renderChat() {
+    const container = document.getElementById('chat-container');
+    const headerName = document.getElementById('chat-active-name');
+    const headerPersona = document.getElementById('chat-active-persona');
+    
+    const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+    
+    const char = state.characters.find(c => c.id === state.activeCharId);
+    
+    if(!char) {
+        headerName.innerText = "No Character Selected";
+        headerPersona.innerText = "Go to Cast to select a character.";
+        container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Select a character to begin.</p></div>`;
+        return;
+    }
+    
+    headerName.innerText = char.name;
+    headerPersona.innerText = char.desc;
+
+    const messages = state.chatHistory[state.activeChapterId] || [];
+    
+    if(messages.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Start of conversation.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = '';
+    messages.forEach(msg => {
+        const el = document.createElement('div');
+        el.className = `msg ${msg.role === 'user' ? 'msg-user' : 'msg-ai'}`;
+        // Only show content, never show reasoning_content in UI
+        el.innerText = msg.content;
+        container.appendChild(el);
+    });
+    
+    if(wasAtBottom) {
+        requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight;
+        });
+    }
+}
+
+function clearChatHistory() {
+    if(confirm("Clear chat history for this chapter?")) {
+        state.chatHistory[state.activeChapterId] = [];
+        saveState();
+        renderChat();
+    }
+}
+
+function exportChat() {
+    const messages = state.chatHistory[state.activeChapterId] || [];
+    let text = `Chat Export - ${new Date().toLocaleString()}\n\n`;
+    messages.forEach(m => {
+        text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`;
+    });
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `rp-chat-${Date.now()}.txt`;
+    a.click();
+}
+
+function exportStateJSON() {
+    const stateString = JSON.stringify(state, null, 2);
+    const blob = new Blob([stateString], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `rp-companion-backup-${Date.now()}.json`;
+    a.click();
+    showToast("Backup saved to your device!");
+}
+
+function restoreStateJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const restored = JSON.parse(e.target.result);
+
+            // Basic validation - check it looks like our backup
+            if (!restored.characters || !restored.chapters) {
+                alert("Invalid backup file. Please select a valid RP Companion backup (.json).");
+                return;
+            }
+
+            if (!confirm("Restore this backup? This will replace ALL current data including:\n- Characters\n- Story Bible\n- Chapters & summaries\n- Chat history\n- Settings\n\nThis cannot be undone!")) {
+                // Reset file input so same file can be selected again
+                document.getElementById('restore-file-input').value = '';
+                return;
+            }
+
+            // Restore state
+            state = restored;
+            localStorage.setItem('rp-companion-state', JSON.stringify(state));
+
+            // Re-initialize all views with restored data
+            initSettings();
+            initBible();
+            initCharacters();
+            initChapters();
+            renderChat();
+
+            // Reset file input
+            document.getElementById('restore-file-input').value = '';
+
+            showToast("Backup restored successfully!");
+            navTo('chat');
+
+        } catch (err) {
+            alert("Failed to restore backup: " + err.message);
+            document.getElementById('restore-file-input').value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+function autoResizeTextarea(textarea) {
+    textarea.style.height = '48px';
+    const newHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = newHeight + 'px';
+    
+    const chatContainer = document.getElementById('chat-container');
+    const scrollPos = chatContainer.scrollTop;
+    requestAnimationFrame(() => {
+        chatContainer.scrollTop = scrollPos;
+    });
+}
+
+function checkEnter(e) {
+    if(e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+async function sendMessage() {
+    console.log('=== sendMessage called ===');
+    console.log('Active Character ID:', state.activeCharId);
+    console.log('Active Chapter ID:', state.activeChapterId);
+    
+    if(!state.activeCharId) {
+        console.log('No active character');
+        return showToast("Select a character first");
+    }
+    if(!state.activeChapterId) {
+        console.log('No active chapter');
+        return;
+    }
+    
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    console.log('User input:', text);
+    
+    if(!text) {
+        console.log('Empty input');
+        return;
+    }
+    
+    const chatContainer = document.getElementById('chat-container');
+    const shouldScrollToBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
+    
+    input.value = '';
+    input.style.height = '48px';
+    
+    const msgs = state.chatHistory[state.activeChapterId];
+    msgs.push({ role: 'user', content: text });
+    saveState();
+    renderChat();
+    
+    if(shouldScrollToBottom) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    const systemPrompt = constructSystemPrompt();
+    console.log('System prompt:', systemPrompt);
+    
+    const contextLimit = state.contextWindow;
+    
+    let apiMessages = [{ role: 'system', content: systemPrompt }];
+    const historyToInclude = msgs.slice(-(contextLimit * 2));
+    apiMessages = apiMessages.concat(historyToInclude);
+
+    const provider = state.provider;
+    const model = state.model;
+    
+    console.log('Provider:', provider);
+    console.log('Model:', model);
+    console.log('API Messages:', apiMessages);
+
+    try {
+        const loadId = 'loading-' + Date.now();
+        const container = document.getElementById('chat-container');
+        const loadEl = document.createElement('div');
+        loadEl.className = `msg msg-ai`;
+        loadEl.id = loadId;
+        loadEl.innerHTML = '<div class="spinner" style="display:inline-block; width:14px; height:14px; border-width:2px;"></div>';
+        container.appendChild(loadEl);
+        
+        if(shouldScrollToBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
+
+        const functionUrl = '/api/chat';
+        console.log('Calling function:', functionUrl);
+        
+        const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                provider: provider,
+                model: model,
+                messages: apiMessages
+            })
+        });
+
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        const spinner = document.getElementById(loadId);
+        if(spinner) spinner.remove();
+
+        if(response.ok) {
+            const aiMessage = data.choices[0].message;
+            const aiText = aiMessage.content;
+            const aiReasoning = aiMessage.reasoning_content || null;
+
+            console.log('AI response:', aiText);
+            if(aiReasoning) console.log('Reasoning preserved, length:', aiReasoning.length);
+
+            // Save reasoning_content alongside message for Preserved Thinking
+            // reasoning_content is hidden from display but sent back to API
+            const msgToSave = { role: 'assistant', content: aiText };
+            if(aiReasoning) msgToSave.reasoning_content = aiReasoning;
+
+            msgs.push(msgToSave);
+            saveState();
+            renderChat();
+        } else {
+            console.error("API Error", data);
+            let errMsg = data.error || "Unknown Error";
+            alert("Server Error: " + errMsg);
+        }
+
+    } catch (err) {
+        console.error("Network Error", err);
+        alert("Network Error: " + err.message);
+        const spinner = document.getElementById(loadId);
+        if(spinner) spinner.remove();
+    }
+}
+
+// --- INITIALIZATION ---
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('=== App Initializing ===');
+    initSettings();
+    initBible();
+    initCharacters();
+    initChapters();
+    
+    const providerSelect = document.getElementById('setting-provider');
+    if(providerSelect) {
+        providerSelect.addEventListener('change', handleProviderChange);
+    }
+    
+    navTo('chat');
+    console.log('=== App Initialized ===');
+    console.log('Current state:', state);
+});
+    </script>
+</body>
+</html>
