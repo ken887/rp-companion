@@ -32,279 +32,123 @@
             height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* Layout & Typography */
         h1, h2, h3 { margin: 0 0 10px 0; font-weight: 600; }
         p { margin: 0 0 10px 0; line-height: 1.5; color: var(--secondary-text); }
         code { background: #333; padding: 2px 4px; border-radius: 4px; color: #ff9f43; font-family: monospace; }
         
-        /* Views Management */
         .view {
-            display: none;
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 100px;
+            display: none; flex: 1; overflow-y: auto;
+            padding: 20px; padding-bottom: 100px;
             animation: fadeIn 0.2s ease-out;
         }
         .view.active { display: block; }
-        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Navigation */
         nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            height: var(--nav-height);
-            background-color: var(--surface-color);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 100;
+            position: fixed; bottom: 0; width: 100%; height: var(--nav-height);
+            background-color: var(--surface-color); border-top: 1px solid var(--border-color);
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
         }
-
         .nav-btn {
-            background: none;
-            border: none;
-            color: var(--secondary-text);
-            font-size: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 5px;
-            cursor: pointer;
-            width: 20%;
-            transition: color 0.2s;
+            background: none; border: none; color: var(--secondary-text);
+            font-size: 0.75rem; display: flex; flex-direction: column;
+            align-items: center; padding: 5px; cursor: pointer; width: 20%; transition: color 0.2s;
         }
-
         .nav-btn.active { color: var(--primary-color); }
         .nav-btn svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
 
-        /* Form Elements */
         input, select, textarea {
-            width: 100%;
-            background-color: #2a2a2a;
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            transition: border-color 0.2s;
+            width: 100%; background-color: #2a2a2a; border: 1px solid var(--border-color);
+            color: white; padding: 12px; border-radius: 8px; font-size: 16px;
+            margin-bottom: 15px; transition: border-color 0.2s;
         }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
-        
         label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--secondary-text); font-weight: 500; }
         
         .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            transition: opacity 0.2s;
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; width: 100%; text-align: center; transition: opacity 0.2s;
         }
         .btn:active { opacity: 0.8; }
         .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .btn-secondary { background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--secondary-text); }
         .btn-small { padding: 6px 12px; font-size: 0.85rem; width: auto; display: inline-block; }
 
-        /* Settings Screen */
         .setting-group { background: var(--surface-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .range-value { float: right; color: var(--primary-color); font-weight: bold; }
-
-        /* Story Bible */
         .status-bar { font-size: 0.8rem; text-align: right; margin-top: -10px; margin-bottom: 10px; color: var(--success); }
 
-        /* Character List */
         .char-item {
-            display: flex;
-            align-items: center;
-            background: var(--surface-color);
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 5px solid transparent;
-            cursor: pointer;
+            display: flex; align-items: center; background: var(--surface-color);
+            padding: 12px; margin-bottom: 10px; border-radius: 8px;
+            border-left: 5px solid transparent; cursor: pointer;
         }
         .char-item.active-char { border-left-color: var(--success); background: #252525; }
         .char-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; background-color: #444; flex-shrink: 0; }
         .char-info { flex: 1; overflow: hidden; }
         .char-name { font-weight: bold; font-size: 1rem; }
         .char-personality { font-size: 0.85rem; color: var(--secondary-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Edit Button Style */
-        .char-edit-btn {
-            background: transparent;
-            border: none;
-            color: var(--secondary-text);
-            cursor: pointer;
-            padding: 8px;
-            margin-left: 10px;
-            border-radius: 4px;
-        }
+        .char-edit-btn { background: transparent; border: none; color: var(--secondary-text); cursor: pointer; padding: 8px; margin-left: 10px; border-radius: 4px; }
         .char-edit-btn:hover { color: var(--primary-color); background: rgba(255,255,255,0.1); }
         .char-edit-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
-        /* Chapter Tabs */
         .chapter-nav { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px; }
-        .chapter-tab {
-            background: var(--surface-color);
-            padding: 8px 15px;
-            border-radius: 20px;
-            white-space: nowrap;
-            font-size: 0.9rem;
-            border: 1px solid var(--border-color);
-        }
+        .chapter-tab { background: var(--surface-color); padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: 0.9rem; border: 1px solid var(--border-color); }
         .chapter-tab.active { background: var(--primary-color); border-color: var(--primary-color); }
         .note-area { background-color: #1a2e1a; border-color: #2f4f2f; }
 
-        /* --- CHAT INTERFACE FIX (Flexbox) --- */
-        #view-chat {
-            display: none; 
-            flex-direction: column; 
-            height: 100%; 
-            padding: 0; 
-            overflow: hidden; 
-        }
-        
-        #view-chat.active {
-            display: flex;
-        }
-
-        .chat-header {
-            padding: 10px 15px;
-            background: var(--surface-color);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.9rem;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            flex-shrink: 0; 
-        }
+        #view-chat { display: none; flex-direction: column; height: 100%; padding: 0; overflow: hidden; }
+        #view-chat.active { display: flex; }
+        .chat-header { padding: 10px 15px; background: var(--surface-color); border-bottom: 1px solid var(--border-color); font-size: 0.9rem; display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
         .chat-header-row { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-
-        #chat-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            padding: 15px; 
-            scroll-behavior: smooth; 
-        }
-        
+        #chat-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 15px; scroll-behavior: smooth; }
         .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; position: relative; }
         .msg-user { align-self: flex-end; background-color: var(--accent-user); color: white; border-bottom-right-radius: 2px; }
         .msg-ai { align-self: flex-start; background-color: var(--accent-ai); color: #e5e5e5; border-bottom-left-radius: 2px; }
-        .msg-context-dimmed { opacity: 0.4; filter: grayscale(0.8); }
+        .chat-input-area { background: var(--surface-color); padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
+        .chat-footer-buttons { text-align:center; padding: 10px 5px; background:#121212; display:flex; justify-content:center; gap: 8px; border-top: 1px solid #222; flex-shrink: 0; flex-wrap: wrap; }
 
-        .chat-input-area {
-            background: var(--surface-color);
-            padding: 10px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            flex-shrink: 0; 
-        }
-        
-        /* NEW: Footer with wrapping support */
-        .chat-footer-buttons {
-            text-align:center; 
-            padding: 10px 5px; 
-            background:#121212; 
-            display:flex; 
-            justify-content:center; 
-            gap: 8px; 
-            border-top: 1px solid #222; 
-            flex-shrink: 0;
-            flex-wrap: wrap; /* Allows buttons to stack on small screens */
-        }
-
-        .token-indicator { font-size: 0.75rem; color: var(--secondary-text); }
-        .token-warning { color: orange; font-weight: bold; }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
         .modal.open { display: flex; }
-        .modal-content {
-            background: var(--bg-color);
-            padding: 20px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-        }
+        .modal-content { background: var(--bg-color); padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color); }
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .close-btn { background: none; border: none; font-size: 1.5rem; color: var(--secondary-text); padding: 0; }
 
-        /* Utility */
         .hidden { display: none !important; }
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--primary-color);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary-color); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Custom Toast */
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 12px;
-            position: fixed;
-            z-index: 300;
-            left: 50%;
-            bottom: 80px;
-            transform: translateX(-50%);
-            font-size: 0.9rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 300; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 0.9rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 80px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 80px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
     </style>
 </head>
 <body>
 
     <!-- SETTINGS SCREEN -->
     <main id="view-settings" class="view">
-        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.0 Backup Added)</span></h2>
+        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.1 custom/other API provider)</span></h2>
         <div class="setting-group">
             <label>API Provider</label>
+            <!-- Mancer removed from UI. Still works if model field is set to a Mancer model
+                 and provider value 'mancer' is saved in state from a previous backup. -->
             <select id="setting-provider">
-                <option value="mancer">Mancer (glm-4.7)</option>
                 <option value="openrouter">OpenRouter</option>
                 <option value="anthropic">Anthropic (Direct)</option>
                 <option value="openai">OpenAI (Direct)</option>
+                <option value="custom">Custom / Other</option>
             </select>
+            <!-- Shown only when Custom / Other is selected -->
+            <div id="custom-provider-row" class="hidden">
+                <label>Custom Provider Name</label>
+                <input type="text" id="setting-custom-provider" placeholder="" oninput="debounceSaveSettings()">
+                <p style="font-size: 0.75rem; color: var(--secondary-text); margin-top:-10px; margin-bottom:0;">
+                    Must match a provider key on the server: <code>mancer</code>, etc.
+                </p>
+            </div>
             <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
                 Select your AI provider. API keys are configured on the server.
             </p>
@@ -319,9 +163,9 @@
 
         <div class="setting-group">
             <label>Model Name</label>
-            <input type="text" id="setting-model" value="glm-4.7" oninput="debounceSaveSettings()">
+            <input type="text" id="setting-model" value="anthropic/claude-3-haiku" oninput="debounceSaveSettings()">
             <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
-                Examples: <code>glm-4.7</code> (Mancer), <code>anthropic/claude-3-haiku</code> (OpenRouter), <code>gpt-3.5-turbo</code> (OpenAI)
+                Examples: <code>anthropic/claude-3-haiku</code> (OpenRouter), <code>claude-3-haiku-20240307</code> (Anthropic), <code>gpt-3.5-turbo</code> (OpenAI)
             </p>
         </div>
 
@@ -348,37 +192,26 @@
         <button class="btn btn-secondary" onclick="previewSystemPrompt()">Preview System Prompt</button>
         <br><br>
 
-        <!-- BACKUP & RESTORE SECTION -->
         <div class="setting-group">
             <h3>💾 Backup & Restore</h3>
             <p style="font-size:0.85rem; margin-bottom:15px;">Save all your data (characters, bible, chapters, chat history, settings) to a file on your device, or restore from a previous backup.</p>
-            
             <label>What gets saved in a backup:</label>
             <p style="font-size:0.8rem; background:#1a2a1a; padding:10px; border-radius:6px; margin-bottom:15px;">
                 ✅ All Characters &nbsp;|&nbsp; ✅ Story Bible &nbsp;|&nbsp; ✅ All Chapters<br>
                 ✅ All Chat History &nbsp;|&nbsp; ✅ Settings &nbsp;|&nbsp; ✅ System Prompt Template
             </p>
-
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="btn btn-small" onclick="exportStateJSON()" style="flex:1; min-width:130px;">
-                    💾 Save Backup
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()" style="flex:1; min-width:130px; border-color:#3b82f6; color:#3b82f6;">
-                    📂 Load Backup
-                </button>
+                <button class="btn btn-small" onclick="exportStateJSON()" style="flex:1; min-width:130px;">💾 Save Backup</button>
+                <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()" style="flex:1; min-width:130px; border-color:#3b82f6; color:#3b82f6;">📂 Load Backup</button>
             </div>
-            <p style="font-size:0.75rem; color:#666; margin-top:10px; margin-bottom:0;">
-                ⚠️ Loading a backup will replace ALL current data.
-            </p>
+            <p style="font-size:0.75rem; color:#666; margin-top:10px; margin-bottom:0;">⚠️ Loading a backup will replace ALL current data.</p>
         </div>
 
-        <!-- Also keep Export Chat here for convenience -->
         <div class="setting-group">
             <h3>💬 Export Chat</h3>
             <p style="font-size:0.85rem; margin-bottom:15px;">Export the current chapter's chat as a plain text file.</p>
             <button class="btn btn-secondary" onclick="exportChat()">💬 Export Current Chat (.txt)</button>
         </div>
-
         <br>
     </main>
 
@@ -397,9 +230,7 @@
             <h2>Characters</h2>
             <button class="btn btn-small" onclick="openCharModal()">+ Add New</button>
         </div>
-        <div id="character-list">
-            <!-- Characters injected here -->
-        </div>
+        <div id="character-list"></div>
     </main>
 
     <!-- CHAPTERS SCREEN -->
@@ -408,11 +239,7 @@
             <h2>Chapters</h2>
             <button class="btn btn-small" onclick="addChapter()">+ New Chapter</button>
         </div>
-        
-        <div class="chapter-nav" id="chapter-tabs">
-            <!-- Chapter tabs injected here -->
-        </div>
-
+        <div class="chapter-nav" id="chapter-tabs"></div>
         <div id="chapter-editor">
             <label>Chapter Title</label>
             <input type="text" id="chapter-title" oninput="debounceSaveChapters()">
@@ -434,22 +261,15 @@
             </div>
             <span id="chat-active-persona" style="font-size:0.8rem; color:var(--secondary-text); margin-top:4px;">Select a character to begin.</span>
         </div>
-    
         <div id="chat-container">
-            <div style="text-align:center; color:var(--secondary-text); margin-top:50px;">
-                <p>Start a new roleplay session.</p>
-            </div>
+            <div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Start a new roleplay session.</p></div>
         </div>
-
         <div class="chat-input-area">
             <textarea id="chat-input" rows="1" placeholder="Type a message..." style="margin-bottom:0; resize:none; max-height: 120px; overflow-y:auto;" oninput="autoResizeTextarea(this)" onkeydown="checkEnter(event)"></textarea>
             <button class="btn btn-small" id="send-btn" style="height: 48px; width: 48px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="sendMessage()">
                 <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
             </button>
         </div>
-        
-        <!-- UPDATED FOOTER -->
-        <!-- Hidden file input for restore -->
         <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="restoreStateJSON(event)">
         <div class="chat-footer-buttons">
             <button class="btn btn-secondary btn-small" onclick="clearChatHistory()">🗑 Clear Chat</button>
@@ -483,7 +303,6 @@
         </button>
     </nav>
 
-    <!-- TOAST NOTIFICATION -->
     <div id="toast">Message</div>
 
     <!-- CHARACTER MODAL -->
@@ -506,13 +325,12 @@
     </div>
 
     <script>
-// RP Companion - Frontend v1.1.1 - Fixed & Debugged
 console.log('RP Companion Frontend v1.1.1 loaded successfully');
 
-// --- STATE MANAGEMENT ---
+// --- STATE ---
 const defaultState = {
-    provider: 'mancer',
-    model: 'glm-4.7',
+    provider: 'openrouter',
+    model: 'anthropic/claude-3-haiku',
     bible: '',
     systemTemplate: `You are {{char}}. \n\n{{bible}}\n\nCurrent Context: {{summary}}`,
     bibleToggle: true,
@@ -525,35 +343,42 @@ const defaultState = {
 };
 
 let state = JSON.parse(localStorage.getItem('rp-companion-state')) || JSON.parse(JSON.stringify(defaultState));
+
+// Migrate: if old state had 'mancer' as provider, silently move to openrouter
+if (state.provider === 'mancer') {
+    state.provider = 'openrouter';
+    state.model = 'anthropic/claude-3-haiku';
+    localStorage.setItem('rp-companion-state', JSON.stringify(state));
+}
+
 let saveTimeout;
 
-// --- NAVIGATION ---
+// --- NAV ---
 function navTo(viewId) {
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('nav-' + viewId).classList.add('active');
-    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
-    if(viewId === 'chat') renderChat();
+    if (viewId === 'chat') renderChat();
 }
 
 // --- UTILS ---
 function showToast(msg) {
     const t = document.getElementById("toast");
-    t.className = "show";
-    t.innerText = msg;
+    t.className = "show"; t.innerText = msg;
     setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
 }
-
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-function saveState() {
-    localStorage.setItem('rp-companion-state', JSON.stringify(state));
-}
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+function saveState() { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
 
 function saveSettings() {
-    state.provider = document.getElementById('setting-provider').value;
+    const dropdownVal = document.getElementById('setting-provider').value;
+    if (dropdownVal === 'custom') {
+        const customVal = document.getElementById('setting-custom-provider').value.trim();
+        state.provider = customVal || 'custom';
+    } else {
+        state.provider = dropdownVal;
+    }
     state.model = document.getElementById('setting-model').value;
     state.systemTemplate = document.getElementById('setting-sys-template').value;
     state.bibleToggle = document.getElementById('setting-bible-toggle').checked;
@@ -563,35 +388,50 @@ function saveSettings() {
 
 function debounceSaveSettings() {
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveSettings();
-        showToast("Settings saved");
-    }, 1000);
+    saveTimeout = setTimeout(() => { saveSettings(); showToast("Settings saved"); }, 1000);
 }
 
-// --- SETTINGS LOGIC ---
+// --- SETTINGS ---
 function initSettings() {
-    document.getElementById('setting-provider').value = state.provider || 'mancer';
-    document.getElementById('setting-model').value = state.model || 'glm-4.7';
+    const providerSelect = document.getElementById('setting-provider');
+    const knownProviders = ['openrouter', 'anthropic', 'openai'];
+    if (knownProviders.includes(state.provider)) {
+        providerSelect.value = state.provider;
+        document.getElementById('custom-provider-row').classList.add('hidden');
+    } else {
+        // 'mancer' or any other custom value
+        providerSelect.value = 'custom';
+        document.getElementById('setting-custom-provider').value = state.provider === 'custom' ? '' : state.provider;
+        document.getElementById('custom-provider-row').classList.remove('hidden');
+    }
+
+    document.getElementById('setting-model').value = state.model || 'anthropic/claude-3-haiku';
     document.getElementById('setting-sys-template').value = state.systemTemplate || defaultState.systemTemplate;
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle;
     document.getElementById('setting-context').value = state.contextWindow;
     document.getElementById('ctx-val').innerText = state.contextWindow;
-    handleProviderChange();
 }
 
 function handleProviderChange() {
     const provider = document.getElementById('setting-provider').value;
     const modelInput = document.getElementById('setting-model');
-    
-    if (provider === 'openrouter') {
-        if(state.provider !== 'openrouter') modelInput.value = "anthropic/claude-3-haiku";
-    } else if (provider === 'anthropic') {
-        if(state.provider !== 'anthropic') modelInput.value = "claude-3-haiku-20240307";
-    } else if (provider === 'openai') {
-        if(state.provider !== 'openai') modelInput.value = "gpt-3.5-turbo";
-    } else if (provider === 'mancer') {
-        if(state.provider !== 'mancer') modelInput.value = "glm-4.7";
+    const customRow = document.getElementById('custom-provider-row');
+
+    // Show/hide custom provider text box
+    if (provider === 'custom') {
+        customRow.classList.remove('hidden');
+    } else {
+        customRow.classList.add('hidden');
+    }
+
+    const defaults = {
+        openrouter: 'anthropic/claude-3-haiku',
+        anthropic:  'claude-3-haiku-20240307',
+        openai:     'gpt-3.5-turbo',
+        custom:     ''
+    };
+    if (state.provider !== provider && defaults[provider] !== undefined) {
+        modelInput.value = defaults[provider];
     }
     debounceSaveSettings();
 }
@@ -602,20 +442,17 @@ function updateRangeValue() {
 }
 
 function resetSystemTemplate() {
-    if(confirm("Reset template to default?")) {
+    if (confirm("Reset template to default?")) {
         document.getElementById('setting-sys-template').value = defaultState.systemTemplate;
         debounceSaveSettings();
     }
 }
 
-function previewSystemPrompt() {
-    alert("Preview:\n\n" + constructSystemPrompt());
-}
+function previewSystemPrompt() { alert("Preview:\n\n" + constructSystemPrompt()); }
 
-// --- BIBLE LOGIC ---
+// --- BIBLE ---
 function initBible() {
-    const bibleInput = document.getElementById('bible-input');
-    bibleInput.value = state.bible || '';
+    document.getElementById('bible-input').value = state.bible || '';
     updateBibleCount();
 }
 
@@ -634,119 +471,89 @@ function updateBibleCount() {
     const len = (state.bible || "").length;
     const el = document.getElementById('bible-count');
     el.innerText = `${len} chars`;
-    if(len > 4000) el.style.color = 'orange';
-    else el.style.color = 'var(--success)';
+    el.style.color = len > 4000 ? 'orange' : 'var(--success)';
 }
 
-// --- CHARACTER LOGIC ---
-function initCharacters() {
-    renderCharacterList();
-}
+// --- CHARACTERS ---
+function initCharacters() { renderCharacterList(); }
 
 function renderCharacterList() {
     const container = document.getElementById('character-list');
     container.innerHTML = '';
-    
     state.characters.forEach(char => {
         const el = document.createElement('div');
         el.className = `char-item ${state.activeCharId === char.id ? 'active-char' : ''}`;
         el.onclick = () => selectCharacter(char.id);
-        
         el.innerHTML = `
             <div class="char-avatar"></div>
             <div class="char-info">
                 <div class="char-name">${char.name}</div>
                 <div class="char-personality">${char.desc}</div>
             </div>
-            <button class="char-edit-btn" onclick="event.stopPropagation(); openCharModal('${char.id}')" title="Edit Character">
+            <button class="char-edit-btn" onclick="event.stopPropagation(); openCharModal('${char.id}')" title="Edit">
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            </button>
-        `;
+            </button>`;
         container.appendChild(el);
     });
 }
 
 function openCharModal(charId = null) {
     const modal = document.getElementById('char-modal');
-    const nameInput = document.getElementById('char-name');
-    const descInput = document.getElementById('char-desc');
-    const idInput = document.getElementById('char-id');
     const delBtn = document.getElementById('btn-delete-char');
-
     if (charId) {
         const char = state.characters.find(c => c.id === charId);
-        nameInput.value = char.name;
-        descInput.value = char.desc;
-        idInput.value = char.id;
+        document.getElementById('char-name').value = char.name;
+        document.getElementById('char-desc').value = char.desc;
+        document.getElementById('char-id').value = char.id;
         delBtn.classList.remove('hidden');
     } else {
-        nameInput.value = '';
-        descInput.value = '';
-        idInput.value = '';
+        document.getElementById('char-name').value = '';
+        document.getElementById('char-desc').value = '';
+        document.getElementById('char-id').value = '';
         delBtn.classList.add('hidden');
     }
     modal.classList.add('open');
 }
 
-function closeCharModal() {
-    document.getElementById('char-modal').classList.remove('open');
-}
+function closeCharModal() { document.getElementById('char-modal').classList.remove('open'); }
 
 function saveCharacter() {
     const id = document.getElementById('char-id').value;
     const name = document.getElementById('char-name').value;
     const desc = document.getElementById('char-desc').value;
-
-    if(!name) return alert("Name required");
-
+    if (!name) return alert("Name required");
     if (id) {
         const char = state.characters.find(c => c.id === id);
-        char.name = name;
-        char.desc = desc;
+        char.name = name; char.desc = desc;
     } else {
-        state.characters.push({
-            id: generateId(),
-            name: name,
-            desc: desc
-        });
+        state.characters.push({ id: generateId(), name, desc });
     }
-    saveState();
-    renderCharacterList();
-    closeCharModal();
+    saveState(); renderCharacterList(); closeCharModal();
 }
 
 function deleteCharacter() {
     const id = document.getElementById('char-id').value;
-    if(confirm("Delete this character?")) {
+    if (confirm("Delete this character?")) {
         state.characters = state.characters.filter(c => c.id !== id);
-        if(state.activeCharId === id) {
-            state.activeCharId = null;
-        }
-        saveState();
-        renderCharacterList();
-        closeCharModal();
+        if (state.activeCharId === id) state.activeCharId = null;
+        saveState(); renderCharacterList(); closeCharModal();
     }
 }
 
 function selectCharacter(id) {
     state.activeCharId = id;
-    saveState();
-    renderCharacterList();
-    navTo('chat');
+    saveState(); renderCharacterList(); navTo('chat');
 }
 
-// --- CHAPTERS LOGIC ---
+// --- CHAPTERS ---
 function initChapters() {
-    if(!state.chapters || state.chapters.length === 0) {
-        addChapter();
-    }
+    if (!state.chapters || state.chapters.length === 0) addChapter();
     renderChapterTabs();
 }
 
 function renderChapterTabs() {
     const container = document.getElementById('chapter-tabs');
     container.innerHTML = '';
-    
     state.chapters.forEach(ch => {
         const el = document.createElement('button');
         el.className = `chapter-tab ${state.activeChapterId === ch.id ? 'active' : ''}`;
@@ -754,27 +561,16 @@ function renderChapterTabs() {
         el.onclick = () => loadChapter(ch.id);
         container.appendChild(el);
     });
-    
-    if(state.activeChapterId) {
-        loadChapter(state.activeChapterId);
-    } else if(state.chapters.length > 0) {
-        loadChapter(state.chapters[0].id);
-    }
+    if (state.activeChapterId) loadChapter(state.activeChapterId);
+    else if (state.chapters.length > 0) loadChapter(state.chapters[0].id);
 }
 
 function addChapter() {
-    const newCh = {
-        id: generateId(),
-        title: "New Chapter",
-        summary: "",
-        notes: ""
-    };
+    const newCh = { id: generateId(), title: "New Chapter", summary: "", notes: "" };
     state.chapters.push(newCh);
     state.activeChapterId = newCh.id;
     state.chatHistory[newCh.id] = [];
-    saveState();
-    renderChapterTabs();
-    loadChapter(newCh.id);
+    saveState(); renderChapterTabs(); loadChapter(newCh.id);
 }
 
 function loadChapter(id) {
@@ -783,7 +579,7 @@ function loadChapter(id) {
     document.getElementById('chapter-title').value = ch.title;
     document.getElementById('chapter-summary').value = ch.summary;
     document.getElementById('chapter-notes').value = ch.notes;
-    if(!state.chatHistory[id]) state.chatHistory[id] = [];
+    if (!state.chatHistory[id]) state.chatHistory[id] = [];
     saveState();
 }
 
@@ -791,44 +587,34 @@ function debounceSaveChapters() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
         const ch = state.chapters.find(c => c.id === state.activeChapterId);
-        if(ch) {
+        if (ch) {
             ch.title = document.getElementById('chapter-title').value;
             ch.summary = document.getElementById('chapter-summary').value;
             ch.notes = document.getElementById('chapter-notes').value;
-            saveState();
-            renderChapterTabs();
+            saveState(); renderChapterTabs();
         }
     }, 500);
 }
 
 function deleteCurrentChapter() {
-    if(state.chapters.length <= 1) return alert("You must have at least one chapter.");
-    if(confirm("Delete this chapter and its history?")) {
+    if (state.chapters.length <= 1) return alert("You must have at least one chapter.");
+    if (confirm("Delete this chapter and its history?")) {
         const idx = state.chapters.findIndex(c => c.id === state.activeChapterId);
         state.chapters.splice(idx, 1);
         delete state.chatHistory[state.activeChapterId];
         state.activeChapterId = state.chapters[0].id;
-        saveState();
-        renderChapterTabs();
-        loadChapter(state.activeChapterId);
+        saveState(); renderChapterTabs(); loadChapter(state.activeChapterId);
     }
 }
 
-// --- CHAT LOGIC ---
+// --- CHAT ---
 function constructSystemPrompt() {
     const char = state.characters.find(c => c.id === state.activeCharId);
     const charDesc = char ? `${char.name}: ${char.desc}` : "Unknown Character";
     const ch = state.chapters.find(c => c.id === state.activeChapterId);
     const summary = ch ? ch.summary : "No context";
-    
-    let bibleText = "";
-    if(state.bibleToggle) {
-        bibleText = state.bible || "";
-    }
-
-    let template = state.systemTemplate || defaultState.systemTemplate;
-    
-    return template
+    const bibleText = state.bibleToggle ? (state.bible || "") : "";
+    return (state.systemTemplate || defaultState.systemTemplate)
         .replace('{{bible}}', bibleText)
         .replace('{{char}}', charDesc)
         .replace('{{summary}}', summary);
@@ -836,73 +622,53 @@ function constructSystemPrompt() {
 
 function renderChat() {
     const container = document.getElementById('chat-container');
-    const headerName = document.getElementById('chat-active-name');
-    const headerPersona = document.getElementById('chat-active-persona');
-    
     const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
-    
     const char = state.characters.find(c => c.id === state.activeCharId);
     
-    if(!char) {
-        headerName.innerText = "No Character Selected";
-        headerPersona.innerText = "Go to Cast to select a character.";
+    if (!char) {
+        document.getElementById('chat-active-name').innerText = "No Character Selected";
+        document.getElementById('chat-active-persona').innerText = "Go to Cast to select a character.";
         container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Select a character to begin.</p></div>`;
         return;
     }
-    
-    headerName.innerText = char.name;
-    headerPersona.innerText = char.desc;
+    document.getElementById('chat-active-name').innerText = char.name;
+    document.getElementById('chat-active-persona').innerText = char.desc;
 
     const messages = state.chatHistory[state.activeChapterId] || [];
-    
-    if(messages.length === 0) {
+    if (messages.length === 0) {
         container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Start of conversation.</p></div>`;
         return;
     }
-
     container.innerHTML = '';
     messages.forEach(msg => {
         const el = document.createElement('div');
         el.className = `msg ${msg.role === 'user' ? 'msg-user' : 'msg-ai'}`;
-        // Only show content, never show reasoning_content in UI
         el.innerText = msg.content;
         container.appendChild(el);
     });
-    
-    if(wasAtBottom) {
-        requestAnimationFrame(() => {
-            container.scrollTop = container.scrollHeight;
-        });
-    }
+    if (wasAtBottom) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
 
 function clearChatHistory() {
-    if(confirm("Clear chat history for this chapter?")) {
+    if (confirm("Clear chat history for this chapter?")) {
         state.chatHistory[state.activeChapterId] = [];
-        saveState();
-        renderChat();
+        saveState(); renderChat();
     }
 }
 
 function exportChat() {
     const messages = state.chatHistory[state.activeChapterId] || [];
     let text = `Chat Export - ${new Date().toLocaleString()}\n\n`;
-    messages.forEach(m => {
-        text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`;
-    });
-    
-    const blob = new Blob([text], { type: 'text/plain' });
+    messages.forEach(m => { text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
     a.download = `rp-chat-${Date.now()}.txt`;
     a.click();
 }
 
 function exportStateJSON() {
-    const stateString = JSON.stringify(state, null, 2);
-    const blob = new Blob([stateString], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
     a.download = `rp-companion-backup-${Date.now()}.json`;
     a.click();
     showToast("Backup saved to your device!");
@@ -911,41 +677,27 @@ function exportStateJSON() {
 function restoreStateJSON(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const restored = JSON.parse(e.target.result);
-
-            // Basic validation - check it looks like our backup
             if (!restored.characters || !restored.chapters) {
-                alert("Invalid backup file. Please select a valid RP Companion backup (.json).");
-                return;
+                alert("Invalid backup file."); return;
             }
-
-            if (!confirm("Restore this backup? This will replace ALL current data including:\n- Characters\n- Story Bible\n- Chapters & summaries\n- Chat history\n- Settings\n\nThis cannot be undone!")) {
-                // Reset file input so same file can be selected again
-                document.getElementById('restore-file-input').value = '';
-                return;
+            if (!confirm("Restore this backup? This will replace ALL current data.\n\nThis cannot be undone!")) {
+                document.getElementById('restore-file-input').value = ''; return;
             }
-
-            // Restore state
             state = restored;
+            // Migrate mancer on restore
+            if (state.provider === 'mancer') {
+                state.provider = 'openrouter';
+                state.model = 'anthropic/claude-3-haiku';
+            }
             localStorage.setItem('rp-companion-state', JSON.stringify(state));
-
-            // Re-initialize all views with restored data
-            initSettings();
-            initBible();
-            initCharacters();
-            initChapters();
-            renderChat();
-
-            // Reset file input
+            initSettings(); initBible(); initCharacters(); initChapters(); renderChat();
             document.getElementById('restore-file-input').value = '';
-
             showToast("Backup restored successfully!");
             navTo('chat');
-
         } catch (err) {
             alert("Failed to restore backup: " + err.message);
             document.getElementById('restore-file-input').value = '';
@@ -956,158 +708,76 @@ function restoreStateJSON(event) {
 
 function autoResizeTextarea(textarea) {
     textarea.style.height = '48px';
-    const newHeight = Math.min(textarea.scrollHeight, 120);
-    textarea.style.height = newHeight + 'px';
-    
-    const chatContainer = document.getElementById('chat-container');
-    const scrollPos = chatContainer.scrollTop;
-    requestAnimationFrame(() => {
-        chatContainer.scrollTop = scrollPos;
-    });
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    const scrollPos = document.getElementById('chat-container').scrollTop;
+    requestAnimationFrame(() => { document.getElementById('chat-container').scrollTop = scrollPos; });
 }
 
 function checkEnter(e) {
-    if(e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
 async function sendMessage() {
-    console.log('=== sendMessage called ===');
-    console.log('Active Character ID:', state.activeCharId);
-    console.log('Active Chapter ID:', state.activeChapterId);
-    
-    if(!state.activeCharId) {
-        console.log('No active character');
-        return showToast("Select a character first");
-    }
-    if(!state.activeChapterId) {
-        console.log('No active chapter');
-        return;
-    }
-    
+    if (!state.activeCharId) return showToast("Select a character first");
+    if (!state.activeChapterId) return;
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    console.log('User input:', text);
-    
-    if(!text) {
-        console.log('Empty input');
-        return;
-    }
-    
+    if (!text) return;
+
     const chatContainer = document.getElementById('chat-container');
-    const shouldScrollToBottom = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
-    
-    input.value = '';
-    input.style.height = '48px';
-    
+    const shouldScroll = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
+    input.value = ''; input.style.height = '48px';
+
     const msgs = state.chatHistory[state.activeChapterId];
     msgs.push({ role: 'user', content: text });
-    saveState();
-    renderChat();
-    
-    if(shouldScrollToBottom) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
+    saveState(); renderChat();
+    if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
 
-    const systemPrompt = constructSystemPrompt();
-    console.log('System prompt:', systemPrompt);
-    
-    const contextLimit = state.contextWindow;
-    
-    let apiMessages = [{ role: 'system', content: systemPrompt }];
-    const historyToInclude = msgs.slice(-(contextLimit * 2));
-    apiMessages = apiMessages.concat(historyToInclude);
+    // Build API messages
+    let apiMessages = [{ role: 'system', content: constructSystemPrompt() }];
+    apiMessages = apiMessages.concat(msgs.slice(-(state.contextWindow * 2)));
 
+    // Use the raw stored provider value so 'mancer' still works if set manually via backup
     const provider = state.provider;
     const model = state.model;
-    
-    console.log('Provider:', provider);
-    console.log('Model:', model);
-    console.log('API Messages:', apiMessages);
 
+    let loadId;
     try {
-        const loadId = 'loading-' + Date.now();
-        const container = document.getElementById('chat-container');
+        loadId = 'loading-' + Date.now();
         const loadEl = document.createElement('div');
-        loadEl.className = `msg msg-ai`;
-        loadEl.id = loadId;
+        loadEl.className = 'msg msg-ai'; loadEl.id = loadId;
         loadEl.innerHTML = '<div class="spinner" style="display:inline-block; width:14px; height:14px; border-width:2px;"></div>';
-        container.appendChild(loadEl);
-        
-        if(shouldScrollToBottom) {
-            container.scrollTop = container.scrollHeight;
-        }
+        chatContainer.appendChild(loadEl);
+        if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
 
-        const functionUrl = '/api/chat';
-        console.log('Calling function:', functionUrl);
-        
-        const response = await fetch(functionUrl, {
+        const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                provider: provider,
-                model: model,
-                messages: apiMessages
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider, model, messages: apiMessages })
         });
-
-        console.log('Response status:', response.status);
         const data = await response.json();
-        console.log('Response data:', data);
+        document.getElementById(loadId)?.remove();
 
-        const spinner = document.getElementById(loadId);
-        if(spinner) spinner.remove();
-
-        if(response.ok) {
-            const aiMessage = data.choices[0].message;
-            const aiText = aiMessage.content;
-            const aiReasoning = aiMessage.reasoning_content || null;
-
-            console.log('AI response:', aiText);
-            if(aiReasoning) console.log('Reasoning preserved, length:', aiReasoning.length);
-
-            // Save reasoning_content alongside message for Preserved Thinking
-            // reasoning_content is hidden from display but sent back to API
-            const msgToSave = { role: 'assistant', content: aiText };
-            if(aiReasoning) msgToSave.reasoning_content = aiReasoning;
-
-            msgs.push(msgToSave);
-            saveState();
-            renderChat();
+        if (response.ok) {
+            const aiMsg = data.choices[0].message;
+            const toSave = { role: 'assistant', content: aiMsg.content };
+            if (aiMsg.reasoning_content) toSave.reasoning_content = aiMsg.reasoning_content;
+            msgs.push(toSave);
+            saveState(); renderChat();
         } else {
-            console.error("API Error", data);
-            let errMsg = data.error || "Unknown Error";
-            alert("Server Error: " + errMsg);
+            alert("Server Error: " + (data.error || "Unknown Error"));
         }
-
     } catch (err) {
-        console.error("Network Error", err);
+        document.getElementById(loadId)?.remove();
         alert("Network Error: " + err.message);
-        const spinner = document.getElementById(loadId);
-        if(spinner) spinner.remove();
     }
 }
 
-// --- INITIALIZATION ---
+// --- INIT ---
 window.addEventListener('DOMContentLoaded', () => {
-    console.log('=== App Initializing ===');
-    initSettings();
-    initBible();
-    initCharacters();
-    initChapters();
-    
-    const providerSelect = document.getElementById('setting-provider');
-    if(providerSelect) {
-        providerSelect.addEventListener('change', handleProviderChange);
-    }
-    
+    initSettings(); initBible(); initCharacters(); initChapters();
+    document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
     navTo('chat');
-    console.log('=== App Initialized ===');
-    console.log('Current state:', state);
 });
     </script>
 </body>
