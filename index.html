@@ -130,11 +130,9 @@
 
     <!-- SETTINGS SCREEN -->
     <main id="view-settings" class="view">
-        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.1 change const defaults z-ai/glm-4.5-air:free and sonnet)</span></h2>
+        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.2 fix: strip reasoning_content from API messages)</span></h2>
         <div class="setting-group">
             <label>API Provider</label>
-            <!-- Mancer removed from UI. Still works if model field is set to a Mancer model
-                 and provider value 'mancer' is saved in state from a previous backup. -->
             <select id="setting-provider">
                 <option value="openrouter">OpenRouter</option>
                 <option value="anthropic">Anthropic (Direct)</option>
@@ -165,7 +163,7 @@
             <label>Model Name</label>
             <input type="text" id="setting-model" value="anthropic/claude-3-haiku" oninput="debounceSaveSettings()">
             <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
-                Examples: <code>anthropic/claude-3-haiku</code> (OpenRouter), <code>claude-3-haiku-20240307</code> (Anthropic), <code>gpt-3.5-turbo</code> (OpenAI)
+                Examples: <code>z-ai/glm-4.5-air:free</code> (OpenRouter), <code>claude-sonnet-4-6</code> (Anthropic), <code>gpt-3.5-turbo</code> (OpenAI)
             </p>
         </div>
 
@@ -325,12 +323,12 @@
     </div>
 
     <script>
-console.log('RP Companion Frontend v1.1.1 loaded successfully');
+console.log('RP Companion Frontend v1.1.2 loaded successfully');
 
 // --- STATE ---
 const defaultState = {
     provider: 'openrouter',
-    model: 'anthropic/claude-3-haiku',
+    model: 'z-ai/glm-4.5-air:free',
     bible: '',
     systemTemplate: `You are {{char}}. \n\n{{bible}}\n\nCurrent Context: {{summary}}`,
     bibleToggle: true,
@@ -347,7 +345,7 @@ let state = JSON.parse(localStorage.getItem('rp-companion-state')) || JSON.parse
 // Migrate: if old state had 'mancer' as provider, silently move to openrouter
 if (state.provider === 'mancer') {
     state.provider = 'openrouter';
-    state.model = 'anthropic/claude-3-haiku';
+    state.model = 'z-ai/glm-4.5-air:free';
     localStorage.setItem('rp-companion-state', JSON.stringify(state));
 }
 
@@ -399,13 +397,12 @@ function initSettings() {
         providerSelect.value = state.provider;
         document.getElementById('custom-provider-row').classList.add('hidden');
     } else {
-        // 'mancer' or any other custom value
         providerSelect.value = 'custom';
         document.getElementById('setting-custom-provider').value = state.provider === 'custom' ? '' : state.provider;
         document.getElementById('custom-provider-row').classList.remove('hidden');
     }
 
-    document.getElementById('setting-model').value = state.model || 'anthropic/claude-3-haiku';
+    document.getElementById('setting-model').value = state.model || 'z-ai/glm-4.5-air:free';
     document.getElementById('setting-sys-template').value = state.systemTemplate || defaultState.systemTemplate;
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle;
     document.getElementById('setting-context').value = state.contextWindow;
@@ -417,7 +414,6 @@ function handleProviderChange() {
     const modelInput = document.getElementById('setting-model');
     const customRow = document.getElementById('custom-provider-row');
 
-    // Show/hide custom provider text box
     if (provider === 'custom') {
         customRow.classList.remove('hidden');
     } else {
@@ -691,7 +687,7 @@ function restoreStateJSON(event) {
             // Migrate mancer on restore
             if (state.provider === 'mancer') {
                 state.provider = 'openrouter';
-                state.model = 'anthropic/claude-3-haiku';
+                state.model = 'z-ai/glm-4.5-air:free';
             }
             localStorage.setItem('rp-companion-state', JSON.stringify(state));
             initSettings(); initBible(); initCharacters(); initChapters(); renderChat();
@@ -733,11 +729,16 @@ async function sendMessage() {
     saveState(); renderChat();
     if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
 
-    // Build API messages
+    // Build API messages — strip extra fields (e.g. reasoning_content) so strict
+    // APIs like Anthropic don't reject the payload with "Extra inputs are not permitted".
     let apiMessages = [{ role: 'system', content: constructSystemPrompt() }];
-    apiMessages = apiMessages.concat(msgs.slice(-(state.contextWindow * 2)));
+    apiMessages = apiMessages.concat(
+        msgs.slice(-(state.contextWindow * 2)).map(m => ({
+            role: m.role,
+            content: m.content
+        }))
+    );
 
-    // Use the raw stored provider value so 'mancer' still works if set manually via backup
     const provider = state.provider;
     const model = state.model;
 
@@ -760,6 +761,8 @@ async function sendMessage() {
 
         if (response.ok) {
             const aiMsg = data.choices[0].message;
+            // Store full message including reasoning_content locally for reference,
+            // but it will never be sent back to the API (stripped above).
             const toSave = { role: 'assistant', content: aiMsg.content };
             if (aiMsg.reasoning_content) toSave.reasoning_content = aiMsg.reasoning_content;
             msgs.push(toSave);
