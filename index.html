@@ -4,354 +4,517 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
-    <title>RP Companion (Serverless)</title>
-    
+    <title>RP Companion</title>
+
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUlAgQ29tcGFuaW9uIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJzdGFydF91cmwiOiIvIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiMxYTFhMWEiLCJpY29ucyI6W3sic3JjIjoiaHR0cHM6Ly9waWNzdW0ucGhvdG9zLzE5MiIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9qcGVnIn1dfQ==">
 
     <style>
         :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #3b82f6;
+            --bg:           #121212;
+            --surface:      #1e1e1e;
+            --surface2:     #252525;
+            --primary:      #3b82f6;
             --primary-text: #ffffff;
-            --secondary-text: #b0b0b0;
-            --accent-user: #2563eb;
-            --accent-ai: #374151;
-            --danger: #ef4444;
-            --success: #10b981;
-            --border-color: #333;
-            --nav-height: 60px;
+            --muted:        #b0b0b0;
+            --user-bubble:  #2563eb;
+            --ai-bubble:    #374151;
+            --danger:       #ef4444;
+            --success:      #10b981;
+            --border:       #333;
+            --nav-h:        60px;
+            /* Director palette */
+            --dir-bg:       #1c1400;
+            --dir-border:   #7c5a00;
+            --dir-text:     #f59e0b;
+            --dir-dim:      #92680a;
+            --dir-panel:    #221a00;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        
+
         body {
-            margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--primary-text);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--primary-text);
             height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
         h1, h2, h3 { margin: 0 0 10px 0; font-weight: 600; }
-        p { margin: 0 0 10px 0; line-height: 1.5; color: var(--secondary-text); }
-        code { background: #333; padding: 2px 4px; border-radius: 4px; color: #ff9f43; font-family: monospace; }
-        
-        .view {
-            display: none; flex: 1; overflow-y: auto;
-            padding: 20px; padding-bottom: 100px;
-            animation: fadeIn 0.2s ease-out;
-        }
-        .view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        p { margin: 0 0 10px 0; line-height: 1.5; color: var(--muted); }
+        code { background: #333; padding: 2px 5px; border-radius: 4px; color: #ff9f43; font-family: monospace; }
 
+        /* ── VIEWS ── */
+        .view { display: none; flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; animation: fadeIn .2s ease-out; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+        /* ── NAV ── */
         nav {
-            position: fixed; bottom: 0; width: 100%; height: var(--nav-height);
-            background-color: var(--surface-color); border-top: 1px solid var(--border-color);
+            position: fixed; bottom: 0; width: 100%; height: var(--nav-h);
+            background: var(--surface); border-top: 1px solid var(--border);
             display: flex; justify-content: space-around; align-items: center; z-index: 100;
         }
         .nav-btn {
-            background: none; border: none; color: var(--secondary-text);
-            font-size: 0.75rem; display: flex; flex-direction: column;
-            align-items: center; padding: 5px; cursor: pointer; width: 20%; transition: color 0.2s;
+            background: none; border: none; color: var(--muted);
+            font-size: .75rem; display: flex; flex-direction: column;
+            align-items: center; padding: 5px; cursor: pointer; width: 20%; transition: color .2s;
         }
-        .nav-btn.active { color: var(--primary-color); }
+        .nav-btn.active { color: var(--primary); }
         .nav-btn svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
 
+        /* ── FORM ELEMENTS ── */
         input, select, textarea {
-            width: 100%; background-color: #2a2a2a; border: 1px solid var(--border-color);
+            width: 100%; background: #2a2a2a; border: 1px solid var(--border);
             color: white; padding: 12px; border-radius: 8px; font-size: 16px;
-            margin-bottom: 15px; transition: border-color 0.2s;
+            margin-bottom: 15px; transition: border-color .2s;
         }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
-        label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--secondary-text); font-weight: 500; }
-        
-        .btn {
-            background-color: var(--primary-color); color: white; border: none;
-            padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600;
-            cursor: pointer; width: 100%; text-align: center; transition: opacity 0.2s;
-        }
-        .btn:active { opacity: 0.8; }
-        .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        .btn-secondary { background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--secondary-text); }
-        .btn-small { padding: 6px 12px; font-size: 0.85rem; width: auto; display: inline-block; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        label { display: block; margin-bottom: 6px; font-size: .9rem; color: var(--muted); font-weight: 500; }
 
-        .setting-group { background: var(--surface-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        /* ── BUTTONS ── */
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; text-align: center; transition: opacity .2s; }
+        .btn:active { opacity: .8; }
+        .btn-danger    { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+        .btn-small     { padding: 6px 12px; font-size: .85rem; width: auto; display: inline-block; }
+
+        /* ── SETTINGS ── */
+        .setting-group { background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); }
         .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .range-value { float: right; color: var(--primary-color); font-weight: bold; }
-        .status-bar { font-size: 0.8rem; text-align: right; margin-top: -10px; margin-bottom: 10px; color: var(--success); }
+        .range-value { float: right; color: var(--primary); font-weight: bold; }
+        .status-bar { font-size: .8rem; text-align: right; margin-top: -10px; margin-bottom: 10px; color: var(--success); }
 
-        .char-item {
-            display: flex; align-items: center; background: var(--surface-color);
-            padding: 12px; margin-bottom: 10px; border-radius: 8px;
-            border-left: 5px solid transparent; cursor: pointer;
-        }
-        .char-item.active-char { border-left-color: var(--success); background: #252525; }
-        .char-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; background-color: #444; flex-shrink: 0; }
+        /* ── CHARACTERS ── */
+        .char-item { display: flex; align-items: center; background: var(--surface); padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid transparent; cursor: pointer; }
+        .char-item.active-char { border-left-color: var(--success); background: var(--surface2); }
+        .char-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; background: #444; flex-shrink: 0; }
         .char-info { flex: 1; overflow: hidden; }
         .char-name { font-weight: bold; font-size: 1rem; }
-        .char-personality { font-size: 0.85rem; color: var(--secondary-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .char-edit-btn { background: transparent; border: none; color: var(--secondary-text); cursor: pointer; padding: 8px; margin-left: 10px; border-radius: 4px; }
-        .char-edit-btn:hover { color: var(--primary-color); background: rgba(255,255,255,0.1); }
+        .char-personality { font-size: .85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .char-edit-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 8px; margin-left: 10px; border-radius: 4px; }
+        .char-edit-btn:hover { color: var(--primary); background: rgba(255,255,255,.1); }
         .char-edit-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
+        /* ── CHAPTERS ── */
         .chapter-nav { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 15px; padding-bottom: 5px; }
-        .chapter-tab { background: var(--surface-color); padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: 0.9rem; border: 1px solid var(--border-color); }
-        .chapter-tab.active { background: var(--primary-color); border-color: var(--primary-color); }
-        .note-area { background-color: #1a2e1a; border-color: #2f4f2f; }
+        .chapter-tab { background: var(--surface); padding: 8px 15px; border-radius: 20px; white-space: nowrap; font-size: .9rem; border: 1px solid var(--border); cursor: pointer; }
+        .chapter-tab.active { background: var(--primary); border-color: var(--primary); }
+        .note-area { background: #1a2e1a; border-color: #2f4f2f; }
 
+        /* ── CHAT LAYOUT ── */
         #view-chat { display: none; flex-direction: column; height: 100%; padding: 0; overflow: hidden; }
         #view-chat.active { display: flex; }
-        .chat-header { padding: 10px 15px; background: var(--surface-color); border-bottom: 1px solid var(--border-color); font-size: 0.9rem; display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
-        .chat-header-row { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+
+        /* ── CHAT HEADER ── */
+        .chat-header { padding: 10px 15px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .chat-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .chat-header-title { font-size: 1rem; font-weight: 700; }
+        .chat-header-buttons { display: flex; gap: 6px; align-items: center; }
+        /* Persistent badges row */
+        .chat-header-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            border-radius: 20px; padding: 3px 10px; font-size: .72rem; font-weight: 600;
+        }
+        .badge-char { background: #1a2a1a; border: 1px solid #2d5a2d; color: var(--success); }
+        .badge-char svg { width: 11px; height: 11px; fill: var(--success); }
+        .badge-director { background: var(--dir-bg); border: 1px solid var(--dir-border); color: var(--dir-text); }
+        .badge-director svg { width: 11px; height: 11px; fill: var(--dir-text); }
+        .badge.hidden { display: none !important; }
+
+        /* Director Mode toggle button */
+        .btn-toggle-dir {
+            background: transparent; border: 1px solid #555; color: #999;
+            padding: 5px 11px; border-radius: 6px; font-size: .78rem;
+            cursor: pointer; transition: all .2s; white-space: nowrap; font-weight: 600;
+        }
+        .btn-toggle-dir.active { background: var(--dir-bg); border-color: var(--dir-border); color: var(--dir-text); }
+
+        /* ── DIRECTOR PANEL ── */
+        .director-panel {
+            background: var(--dir-panel); border-bottom: 2px solid var(--dir-border);
+            padding: 12px 15px; flex-shrink: 0;
+            animation: slideDown .2s ease-out;
+        }
+        .director-panel.hidden { display: none; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+
+        .director-panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .director-panel-title { font-size: .82rem; font-weight: 700; color: var(--dir-text); display: flex; align-items: center; gap: 6px; }
+        .director-panel-title svg { width: 14px; height: 14px; fill: var(--dir-text); }
+        .director-panel-hint { font-size: .72rem; color: var(--dir-dim); margin: 0 0 8px 0; line-height: 1.4; }
+
+        #director-instructions {
+            width: 100%; background: #2a1f00; border: 1px solid var(--dir-border);
+            color: #fde68a; padding: 10px; border-radius: 6px; font-size: .88rem;
+            margin-bottom: 8px; resize: vertical; min-height: 72px;
+            font-family: inherit; transition: border-color .2s; line-height: 1.5;
+        }
+        #director-instructions:focus { border-color: var(--dir-text); outline: none; }
+        #director-instructions::placeholder { color: var(--dir-dim); }
+
+        .director-panel-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-dir-save {
+            background: var(--dir-border); color: #fff; border: none;
+            padding: 6px 14px; border-radius: 6px; font-size: .8rem;
+            font-weight: 600; cursor: pointer; transition: background .2s;
+        }
+        .btn-dir-save:hover { background: var(--dir-text); color: #000; }
+        .btn-dir-clear {
+            background: transparent; color: var(--dir-dim); border: 1px solid #444;
+            padding: 5px 12px; border-radius: 6px; font-size: .8rem; cursor: pointer; transition: color .2s;
+        }
+        .btn-dir-clear:hover { color: var(--danger); border-color: var(--danger); }
+        .dir-save-status { font-size: .74rem; color: var(--success); margin-left: auto; opacity: 0; transition: opacity .4s; }
+        .dir-save-status.show { opacity: 1; }
+
+        /* ── CHAT MESSAGES ── */
         #chat-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 15px; scroll-behavior: smooth; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; position: relative; }
-        .msg-user { align-self: flex-end; background-color: var(--accent-user); color: white; border-bottom-right-radius: 2px; }
-        .msg-ai { align-self: flex-start; background-color: var(--accent-ai); color: #e5e5e5; border-bottom-left-radius: 2px; }
-        .chat-input-area { background: var(--surface-color); padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
-        .chat-footer-buttons { text-align:center; padding: 10px 5px; background:#121212; display:flex; justify-content:center; gap: 8px; border-top: 1px solid #222; flex-shrink: 0; flex-wrap: wrap; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: .95rem; line-height: 1.4; word-wrap: break-word; }
+        .msg-user { align-self: flex-end; background: var(--user-bubble); color: white; border-bottom-right-radius: 2px; }
+        .msg-ai   { align-self: flex-start; background: var(--ai-bubble); color: #e5e5e5; border-bottom-left-radius: 2px; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
+        /* ── CHAT INPUT ── */
+        .chat-input-area { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
+        .chat-footer-buttons { text-align: center; padding: 8px 5px; background: #121212; display: flex; justify-content: center; gap: 8px; border-top: 1px solid #222; flex-shrink: 0; flex-wrap: wrap; }
+
+        /* ── MODAL ── */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.8); z-index:200; justify-content:center; align-items:center; padding:20px; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--bg-color); padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color); }
+        .modal-content { background: var(--bg); padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; color: var(--secondary-text); padding: 0; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; color: var(--muted); padding: 0; cursor: pointer; }
 
+        /* ── MISC ── */
         .hidden { display: none !important; }
-        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary-color); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner { border: 3px solid rgba(255,255,255,.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg) } }
 
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 300; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 0.9rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 80px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 80px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        #toast { visibility:hidden; min-width:250px; background:#333; color:#fff; text-align:center; border-radius:4px; padding:12px; position:fixed; z-index:300; left:50%; bottom:80px; transform:translateX(-50%); font-size:.9rem; box-shadow:0 4px 6px rgba(0,0,0,.3); }
+        #toast.show { visibility:visible; animation: fadein .5s, fadeout .5s 2.5s; }
+        @keyframes fadein  { from{bottom:0;opacity:0} to{bottom:80px;opacity:1} }
+        @keyframes fadeout { from{bottom:80px;opacity:1} to{bottom:0;opacity:0} }
     </style>
 </head>
 <body>
 
-    <!-- SETTINGS SCREEN -->
-    <main id="view-settings" class="view">
-        <h2>Settings <span style="color:#666; font-size:0.8rem;">(v1.1.2 fix: strip reasoning_content from API messages)</span></h2>
-        <div class="setting-group">
-            <label>API Provider</label>
-            <select id="setting-provider">
-                <option value="openrouter">OpenRouter</option>
-                <option value="anthropic">Anthropic (Direct)</option>
-                <option value="openai">OpenAI (Direct)</option>
-                <option value="custom">Custom / Other</option>
-            </select>
-            <!-- Shown only when Custom / Other is selected -->
-            <div id="custom-provider-row" class="hidden">
-                <label>Custom Provider Name</label>
-                <input type="text" id="setting-custom-provider" placeholder="" oninput="debounceSaveSettings()">
-                <p style="font-size: 0.75rem; color: var(--secondary-text); margin-top:-10px; margin-bottom:0;">
-                    Must match a provider key on the server: <code>mancer</code>, etc.
-                </p>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
-                Select your AI provider. API keys are configured on the server.
-            </p>
-        </div>
+<!-- ══════════════════════════════
+     SETTINGS
+══════════════════════════════ -->
+<main id="view-settings" class="view">
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.0 — Director's Mode)</span></h2>
 
-        <div class="setting-group">
-            <label>API Keys</label>
-            <p style="font-size: 0.85rem; color: var(--secondary-text); margin-bottom:0; padding:10px; background:#1a2a1a; border-radius:6px;">
-                ✅ API keys are stored securely on the server. You don't need to enter any keys - just select your provider and start chatting!
-            </p>
+    <div class="setting-group">
+        <label>API Provider</label>
+        <select id="setting-provider">
+            <option value="openrouter">OpenRouter</option>
+            <option value="anthropic">Anthropic (Direct)</option>
+            <option value="openai">OpenAI (Direct)</option>
+            <option value="custom">Custom / Other</option>
+        </select>
+        <div id="custom-provider-row" class="hidden">
+            <label>Custom Provider Name</label>
+            <input type="text" id="setting-custom-provider" placeholder="" oninput="debounceSaveSettings()">
+            <p style="font-size:.75rem;color:var(--muted);margin-top:-10px;margin-bottom:0;">Must match a server provider key: <code>mancer</code>, etc.</p>
         </div>
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:0;">API keys are configured on the server.</p>
+    </div>
 
-        <div class="setting-group">
-            <label>Model Name</label>
-            <input type="text" id="setting-model" value="anthropic/claude-3-haiku" oninput="debounceSaveSettings()">
-            <p style="font-size: 0.75rem; color: var(--secondary-text); margin-bottom:0;">
-                Examples: <code>z-ai/glm-4.5-air:free</code> (OpenRouter), <code>claude-sonnet-4-6</code> (Anthropic), <code>gpt-3.5-turbo</code> (OpenAI)
-            </p>
-        </div>
+    <div class="setting-group">
+        <label>API Keys</label>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:0;padding:10px;background:#1a2a1a;border-radius:6px;">
+            ✅ API keys are stored securely on the server. Select a provider and start chatting!
+        </p>
+    </div>
 
-        <div class="setting-group">
-            <div class="toggle-row">
-                <label style="margin:0">Include Story Bible in Context</label>
-                <input type="checkbox" id="setting-bible-toggle" checked onchange="saveSettings()">
-            </div>
-            <label>Context Window Size (Message Pairs)</label>
-            <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
-            <span class="range-value" id="ctx-val">15</span>
-        </div>
+    <div class="setting-group">
+        <label>Model Name</label>
+        <input type="text" id="setting-model" value="z-ai/glm-4.5-air:free" oninput="debounceSaveSettings()">
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:0;">
+            <code>z-ai/glm-4.5-air:free</code> (OpenRouter) &nbsp;|&nbsp;
+            <code>claude-sonnet-4-6</code> (Anthropic) &nbsp;|&nbsp;
+            <code>gpt-3.5-turbo</code> (OpenAI)
+        </p>
+    </div>
 
-        <div class="setting-group">
-            <h3>System Prompt Template</h3>
-            <p style="font-size: 0.8rem; color: var(--secondary-text); margin-bottom:10px;">
-                Edit how the AI prompt is constructed. Use tags like <code>{{bible}}</code>, <code>{{char}}</code>, <code>{{summary}}</code>.
-            </p>
-            <textarea id="setting-sys-template" rows="8" style="font-family: monospace; font-size: 0.8rem; white-space: pre;" oninput="debounceSaveSettings()"></textarea>
-            <div style="margin-top: 10px;">
-                <button class="btn btn-secondary btn-small" onclick="resetSystemTemplate()">Reset to Default</button>
-            </div>
+    <div class="setting-group">
+        <div class="toggle-row">
+            <label style="margin:0">Include Story Bible in Context</label>
+            <input type="checkbox" id="setting-bible-toggle" checked onchange="saveSettings()">
         </div>
-        <button class="btn btn-secondary" onclick="previewSystemPrompt()">Preview System Prompt</button>
-        <br><br>
+        <label>Context Window Size (Message Pairs)</label>
+        <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
+        <span class="range-value" id="ctx-val">15</span>
+    </div>
 
-        <div class="setting-group">
-            <h3>💾 Backup & Restore</h3>
-            <p style="font-size:0.85rem; margin-bottom:15px;">Save all your data (characters, bible, chapters, chat history, settings) to a file on your device, or restore from a previous backup.</p>
-            <label>What gets saved in a backup:</label>
-            <p style="font-size:0.8rem; background:#1a2a1a; padding:10px; border-radius:6px; margin-bottom:15px;">
-                ✅ All Characters &nbsp;|&nbsp; ✅ Story Bible &nbsp;|&nbsp; ✅ All Chapters<br>
-                ✅ All Chat History &nbsp;|&nbsp; ✅ Settings &nbsp;|&nbsp; ✅ System Prompt Template
-            </p>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="btn btn-small" onclick="exportStateJSON()" style="flex:1; min-width:130px;">💾 Save Backup</button>
-                <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()" style="flex:1; min-width:130px; border-color:#3b82f6; color:#3b82f6;">📂 Load Backup</button>
-            </div>
-            <p style="font-size:0.75rem; color:#666; margin-top:10px; margin-bottom:0;">⚠️ Loading a backup will replace ALL current data.</p>
-        </div>
+    <div class="setting-group">
+        <h3>System Prompt Template</h3>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">
+            Tags: <code>{{char}}</code> <code>{{bible}}</code> <code>{{summary}}</code> <code>{{director}}</code>
+        </p>
+        <textarea id="setting-sys-template" rows="10" style="font-family:monospace;font-size:.8rem;white-space:pre;" oninput="debounceSaveSettings()"></textarea>
+        <button class="btn btn-secondary btn-small" onclick="resetSystemTemplate()">Reset to Default</button>
+    </div>
 
-        <div class="setting-group">
-            <h3>💬 Export Chat</h3>
-            <p style="font-size:0.85rem; margin-bottom:15px;">Export the current chapter's chat as a plain text file.</p>
-            <button class="btn btn-secondary" onclick="exportChat()">💬 Export Current Chat (.txt)</button>
+    <button class="btn btn-secondary" onclick="previewSystemPrompt()">Preview System Prompt</button>
+    <br><br>
+
+    <div class="setting-group">
+        <h3>💾 Backup &amp; Restore</h3>
+        <p style="font-size:.85rem;margin-bottom:15px;">Save all data including Director Instructions to a JSON file.</p>
+        <p style="font-size:.8rem;background:#1a2a1a;padding:10px;border-radius:6px;margin-bottom:15px;">
+            ✅ Characters &nbsp;|&nbsp; ✅ Bible &nbsp;|&nbsp; ✅ Chapters &nbsp;|&nbsp;
+            ✅ Chat History &nbsp;|&nbsp; ✅ Settings &nbsp;|&nbsp; ✅ Director Instructions
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-small" onclick="exportStateJSON()" style="flex:1;min-width:130px;">💾 Save Backup</button>
+            <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()" style="flex:1;min-width:130px;border-color:var(--primary);color:var(--primary);">📂 Load Backup</button>
         </div>
+        <p style="font-size:.75rem;color:#666;margin-top:10px;margin-bottom:0;">⚠️ Loading a backup replaces ALL current data.</p>
+    </div>
+
+    <div class="setting-group">
+        <h3>💬 Export Chat</h3>
+        <button class="btn btn-secondary" onclick="exportChat()">💬 Export Current Chat (.txt)</button>
+    </div>
+    <br>
+</main>
+
+<!-- ══════════════════════════════
+     STORY BIBLE
+══════════════════════════════ -->
+<main id="view-bible" class="view">
+    <h2>Story Bible</h2>
+    <p>World rules, setting, and lore.</p>
+    <textarea id="bible-input" rows="15" placeholder="Write your world lore here..." oninput="debounceSaveBible()"></textarea>
+    <div class="status-bar" id="bible-status">Saved ✓</div>
+    <div class="status-bar" id="bible-count">0 chars</div>
+</main>
+
+<!-- ══════════════════════════════
+     CHARACTERS
+══════════════════════════════ -->
+<main id="view-characters" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h2>Characters</h2>
+        <button class="btn btn-small" onclick="openCharModal()">+ Add New</button>
+    </div>
+    <div id="character-list"></div>
+</main>
+
+<!-- ══════════════════════════════
+     CHAPTERS
+══════════════════════════════ -->
+<main id="view-chapters" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h2>Chapters</h2>
+        <button class="btn btn-small" onclick="addChapter()">+ New Chapter</button>
+    </div>
+    <div class="chapter-nav" id="chapter-tabs"></div>
+    <div id="chapter-editor">
+        <label>Chapter Title</label>
+        <input type="text" id="chapter-title" oninput="debounceSaveChapters()">
+        <label>Summary (Sent to AI)</label>
+        <textarea id="chapter-summary" rows="4" placeholder="Brief summary of current events..." oninput="debounceSaveChapters()"></textarea>
+        <label>Author Notes (Private)</label>
+        <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
         <br>
-    </main>
+        <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
+    </div>
+</main>
 
-    <!-- STORY BIBLE SCREEN -->
-    <main id="view-bible" class="view">
-        <h2>Story Bible</h2>
-        <p>World rules, setting, and lore.</p>
-        <textarea id="bible-input" rows="15" placeholder="Write your world lore here..." oninput="debounceSaveBible()"></textarea>
-        <div class="status-bar" id="bible-status">Saved ✓</div>
-        <div class="status-bar" id="bible-count">0 / 5000</div>
-    </main>
+<!-- ══════════════════════════════
+     CHAT
+══════════════════════════════ -->
+<main id="view-chat" class="view">
 
-    <!-- CHARACTERS SCREEN -->
-    <main id="view-characters" class="view">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2>Characters</h2>
-            <button class="btn btn-small" onclick="openCharModal()">+ Add New</button>
-        </div>
-        <div id="character-list"></div>
-    </main>
-
-    <!-- CHAPTERS SCREEN -->
-    <main id="view-chapters" class="view">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2>Chapters</h2>
-            <button class="btn btn-small" onclick="addChapter()">+ New Chapter</button>
-        </div>
-        <div class="chapter-nav" id="chapter-tabs"></div>
-        <div id="chapter-editor">
-            <label>Chapter Title</label>
-            <input type="text" id="chapter-title" oninput="debounceSaveChapters()">
-            <label>Summary (Sent to AI)</label>
-            <textarea id="chapter-summary" rows="4" placeholder="Brief summary of current events..." oninput="debounceSaveChapters()"></textarea>
-            <label>Author Notes (Private)</label>
-            <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
-            <br>
-            <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
-        </div>
-    </main>
-
-    <!-- CHAT SCREEN -->
-    <main id="view-chat" class="view">
-        <div class="chat-header">
-            <div class="chat-header-row">
-                <strong id="chat-active-name">No Active Character</strong>
-                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px; font-size:0.75rem;">Clear</button>
+    <!-- HEADER with persistent indicators -->
+    <div class="chat-header">
+        <div class="chat-header-row">
+            <span class="chat-header-title" id="chat-active-name">No Character Selected</span>
+            <div class="chat-header-buttons">
+                <button id="btn-toggle-director" class="btn-toggle-dir" onclick="toggleDirectorMode()">
+                    🎬 Director's Mode
+                </button>
+                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">Clear</button>
             </div>
-            <span id="chat-active-persona" style="font-size:0.8rem; color:var(--secondary-text); margin-top:4px;">Select a character to begin.</span>
         </div>
-        <div id="chat-container">
-            <div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Start a new roleplay session.</p></div>
-        </div>
-        <div class="chat-input-area">
-            <textarea id="chat-input" rows="1" placeholder="Type a message..." style="margin-bottom:0; resize:none; max-height: 120px; overflow-y:auto;" oninput="autoResizeTextarea(this)" onkeydown="checkEnter(event)"></textarea>
-            <button class="btn btn-small" id="send-btn" style="height: 48px; width: 48px; padding:0; display:flex; align-items:center; justify-content:center;" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-            </button>
-        </div>
-        <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="restoreStateJSON(event)">
-        <div class="chat-footer-buttons">
-            <button class="btn btn-secondary btn-small" onclick="clearChatHistory()">🗑 Clear Chat</button>
-            <button class="btn btn-secondary btn-small" onclick="exportChat()">💬 Export Chat (.txt)</button>
-            <button class="btn btn-secondary btn-small" onclick="exportStateJSON()">💾 Backup All (.json)</button>
-            <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()">📂 Restore Backup</button>
-        </div>
-    </main>
-
-    <!-- BOTTOM NAV -->
-    <nav>
-        <button class="nav-btn" onclick="navTo('settings')" id="nav-settings">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-            Settings
-        </button>
-        <button class="nav-btn" onclick="navTo('bible')" id="nav-bible">
-            <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-            Bible
-        </button>
-        <button class="nav-btn" onclick="navTo('characters')" id="nav-characters">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            Cast
-        </button>
-        <button class="nav-btn" onclick="navTo('chapters')" id="nav-chapters">
-            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-            Chapters
-        </button>
-        <button class="nav-btn active" onclick="navTo('chat')" id="nav-chat">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            Chat
-        </button>
-    </nav>
-
-    <div id="toast">Message</div>
-
-    <!-- CHARACTER MODAL -->
-    <div id="char-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Character Details</h3>
-                <button class="close-btn" onclick="closeCharModal()">&times;</button>
-            </div>
-            <input type="hidden" id="char-id">
-            <label>Name</label>
-            <input type="text" id="char-name" placeholder="Character Name">
-            <label>Personality / Description</label>
-            <textarea id="char-desc" rows="4" placeholder="How does the character behave?"></textarea>
-            <div style="margin-top:15px;">
-                <button class="btn" onclick="saveCharacter()">Save Character</button>
-                <button class="btn btn-danger btn-small hidden" id="btn-delete-char" onclick="deleteCharacter()" style="float:right; width:auto;">Delete</button>
-            </div>
+        <!-- Always-visible status badges -->
+        <div class="chat-header-badges">
+            <span class="badge badge-char">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Active Character: <strong id="badge-char-name" style="margin-left:3px;">None</strong>
+            </span>
+            <span id="badge-director" class="badge badge-director hidden">
+                <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+                🎬 Director's Mode Active
+            </span>
         </div>
     </div>
 
-    <script>
-console.log('RP Companion Frontend v1.1.2 loaded successfully');
+    <!-- DIRECTOR PANEL — separate input, never appears in chat -->
+    <div id="director-panel" class="director-panel hidden">
+        <div class="director-panel-header">
+            <span class="director-panel-title">
+                <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+                Director Instructions (OOC / Guidance)
+            </span>
+        </div>
+        <p class="director-panel-hint">
+            These are <strong style="color:var(--dir-text);">not</strong> sent as chat messages.
+            They are injected into the AI system prompt as persistent author-level guidance —
+            shaping tone, pacing, or story direction without appearing in the dialogue.
+            Instructions persist across all messages until you edit or disable them.
+        </p>
+        <textarea
+            id="director-instructions"
+            placeholder="e.g. Keep responses concise (2–3 sentences). Shift tone darker and more tense. Make Victoria hesitant about revealing her secret. Avoid using the word 'suddenly'..."
+            oninput="directorTyping()"></textarea>
+        <div class="director-panel-actions">
+            <button class="btn-dir-save" onclick="saveDirectorInstructions()">💾 Apply</button>
+            <button class="btn-dir-clear" onclick="clearDirectorInstructions()">✕ Clear</button>
+            <span id="dir-save-status" class="dir-save-status">Applied ✓</span>
+        </div>
+    </div>
 
-// --- STATE ---
+    <!-- MESSAGES -->
+    <div id="chat-container">
+        <div style="text-align:center;color:var(--muted);margin-top:50px;"><p>Start a new roleplay session.</p></div>
+    </div>
+
+    <!-- CHAT INPUT -->
+    <div class="chat-input-area">
+        <textarea id="chat-input" rows="1"
+            placeholder="Type a message..."
+            style="margin-bottom:0;resize:none;max-height:120px;overflow-y:auto;"
+            oninput="autoResizeTextarea(this)"
+            onkeydown="checkEnter(event)"></textarea>
+        <button class="btn btn-small" id="send-btn"
+            style="height:48px;width:48px;padding:0;display:flex;align-items:center;justify-content:center;"
+            onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+    </div>
+
+    <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="restoreStateJSON(event)">
+
+    <div class="chat-footer-buttons">
+        <button class="btn btn-secondary btn-small" onclick="clearChatHistory()">🗑 Clear Chat</button>
+        <button class="btn btn-secondary btn-small" onclick="exportChat()">💬 Export Chat</button>
+        <button class="btn btn-secondary btn-small" onclick="exportStateJSON()">💾 Backup</button>
+        <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()">📂 Restore</button>
+    </div>
+</main>
+
+<!-- ══════════════════════════════
+     BOTTOM NAV
+══════════════════════════════ -->
+<nav>
+    <button class="nav-btn" onclick="navTo('settings')" id="nav-settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        Settings
+    </button>
+    <button class="nav-btn" onclick="navTo('bible')" id="nav-bible">
+        <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+        Bible
+    </button>
+    <button class="nav-btn" onclick="navTo('characters')" id="nav-characters">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        Cast
+    </button>
+    <button class="nav-btn" onclick="navTo('chapters')" id="nav-chapters">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        Chapters
+    </button>
+    <button class="nav-btn active" onclick="navTo('chat')" id="nav-chat">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        Chat
+    </button>
+</nav>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════
+     CHARACTER MODAL
+══════════════════════════════ -->
+<div id="char-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Character Details</h3>
+            <button class="close-btn" onclick="closeCharModal()">&times;</button>
+        </div>
+        <input type="hidden" id="char-id">
+        <label>Name</label>
+        <input type="text" id="char-name" placeholder="Character Name">
+        <label>Personality / Description</label>
+        <textarea id="char-desc" rows="4" placeholder="How does this character behave?"></textarea>
+        <div style="margin-top:15px;">
+            <button class="btn" onclick="saveCharacter()">Save Character</button>
+            <button class="btn btn-danger btn-small hidden" id="btn-delete-char" onclick="deleteCharacter()" style="float:right;width:auto;">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════
+     JAVASCRIPT
+══════════════════════════════ -->
+<script>
+console.log('RP Companion v1.2.0 loaded');
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
 const defaultState = {
-    provider: 'openrouter',
-    model: 'z-ai/glm-4.5-air:free',
-    bible: '',
-    systemTemplate: `You are {{char}}. \n\n{{bible}}\n\nCurrent Context: {{summary}}`,
-    bibleToggle: true,
-    contextWindow: 15,
-    characters: [],
-    activeCharId: null,
-    chapters: [],
-    activeChapterId: null,
-    chatHistory: {}
+    provider:             'openrouter',
+    model:                'z-ai/glm-4.5-air:free',
+    bible:                '',
+    systemTemplate:
+`You are {{char}}.
+
+{{bible}}
+
+Current Chapter Context:
+{{summary}}
+
+{{director}}`,
+    bibleToggle:          true,
+    contextWindow:        15,
+    characters:           [],
+    activeCharId:         null,
+    chapters:             [],
+    activeChapterId:      null,
+    chatHistory:          {},
+    directorEnabled:      false,
+    directorInstructions: ''
 };
 
-let state = JSON.parse(localStorage.getItem('rp-companion-state')) || JSON.parse(JSON.stringify(defaultState));
+let state = JSON.parse(localStorage.getItem('rp-companion-state'))
+         || JSON.parse(JSON.stringify(defaultState));
 
-// Migrate: if old state had 'mancer' as provider, silently move to openrouter
-if (state.provider === 'mancer') {
-    state.provider = 'openrouter';
-    state.model = 'z-ai/glm-4.5-air:free';
-    localStorage.setItem('rp-companion-state', JSON.stringify(state));
-}
+// ── Migrations ──
+if (state.provider === 'mancer')            { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
+if (state.directorEnabled      == null)     state.directorEnabled      = false;
+if (state.directorInstructions == null)     state.directorInstructions = '';
+
+localStorage.setItem('rp-companion-state', JSON.stringify(state));
 
 let saveTimeout;
+let dirTypingTimer;
 
-// --- NAV ---
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.className = 'show'; t.innerText = msg;
+    setTimeout(() => { t.className = ''; }, 3000);
+}
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+function saveState()   { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
+
+// ─────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────
 function navTo(viewId) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('nav-' + viewId).classList.add('active');
@@ -360,75 +523,146 @@ function navTo(viewId) {
     if (viewId === 'chat') renderChat();
 }
 
-// --- UTILS ---
-function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.className = "show"; t.innerText = msg;
-    setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
-}
-function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
-function saveState() { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
+// ─────────────────────────────────────────
+// DIRECTOR'S MODE
+// ─────────────────────────────────────────
 
-function saveSettings() {
-    const dropdownVal = document.getElementById('setting-provider').value;
-    if (dropdownVal === 'custom') {
-        const customVal = document.getElementById('setting-custom-provider').value.trim();
-        state.provider = customVal || 'custom';
-    } else {
-        state.provider = dropdownVal;
+/**
+ * Toggle Director's Mode on/off.
+ * State is persisted to localStorage so it survives page reload.
+ */
+function toggleDirectorMode() {
+    state.directorEnabled = !state.directorEnabled;
+    saveState();
+    applyDirectorUI();
+    showToast(state.directorEnabled ? "Director's Mode ON" : "Director's Mode OFF");
+}
+
+/**
+ * Sync UI to current state.directorEnabled value.
+ * Called on init, toggle, and restore.
+ */
+function applyDirectorUI() {
+    const on    = state.directorEnabled;
+    const btn   = document.getElementById('btn-toggle-director');
+    const panel = document.getElementById('director-panel');
+    const badge = document.getElementById('badge-director');
+
+    btn.classList.toggle('active', on);
+    btn.textContent = on ? '🎬 Director ON' : "🎬 Director's Mode";
+
+    panel.classList.toggle('hidden', !on);
+    badge.classList.toggle('hidden', !on);
+
+    if (on) {
+        // Populate panel with saved instructions
+        document.getElementById('director-instructions').value = state.directorInstructions || '';
     }
-    state.model = document.getElementById('setting-model').value;
+}
+
+/** Auto-save director instructions 1.5s after user stops typing. */
+function directorTyping() {
+    clearTimeout(dirTypingTimer);
+    dirTypingTimer = setTimeout(() => saveDirectorInstructions(true), 1500);
+}
+
+/**
+ * Save director instructions to state.
+ * silent=true = no visual "Applied ✓" flash (used for auto-save).
+ * silent=false = flash the status indicator (used for button click).
+ */
+function saveDirectorInstructions(silent = false) {
+    state.directorInstructions = (document.getElementById('director-instructions').value || '').trim();
+    saveState();
+    if (!silent) {
+        const el = document.getElementById('dir-save-status');
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2200);
+    }
+}
+
+/** Clear director instructions panel and state. */
+function clearDirectorInstructions() {
+    document.getElementById('director-instructions').value = '';
+    state.directorInstructions = '';
+    saveState();
+    showToast('Director instructions cleared');
+}
+
+// ─────────────────────────────────────────
+// SYSTEM PROMPT
+// Director block is injected via {{director}} tag.
+// When mode is OFF the tag is replaced with an empty string — clean removal.
+// ─────────────────────────────────────────
+function constructSystemPrompt() {
+    const char     = state.characters.find(c => c.id === state.activeCharId);
+    const charDesc = char ? `${char.name}: ${char.desc}` : 'Unknown Character';
+    const ch       = state.chapters.find(c => c.id === state.activeChapterId);
+    const summary  = ch ? ch.summary : 'No context set';
+    const bible    = state.bibleToggle ? (state.bible || '') : '';
+
+    let directorBlock = '';
+    if (state.directorEnabled && state.directorInstructions) {
+        directorBlock =
+`---
+DIRECTOR'S INSTRUCTIONS (Out-of-Character / Author Guidance)
+Apply the following guidance to your responses. These are not part of the story dialogue.
+${state.directorInstructions}
+---`;
+    }
+
+    return (state.systemTemplate || defaultState.systemTemplate)
+        .replace('{{char}}',     charDesc)
+        .replace('{{bible}}',    bible)
+        .replace('{{summary}}',  summary)
+        .replace('{{director}}', directorBlock);
+}
+
+// ─────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────
+function saveSettings() {
+    const prov = document.getElementById('setting-provider').value;
+    state.provider = prov === 'custom'
+        ? (document.getElementById('setting-custom-provider').value.trim() || 'custom')
+        : prov;
+    state.model          = document.getElementById('setting-model').value;
     state.systemTemplate = document.getElementById('setting-sys-template').value;
-    state.bibleToggle = document.getElementById('setting-bible-toggle').checked;
-    state.contextWindow = parseInt(document.getElementById('setting-context').value);
+    state.bibleToggle    = document.getElementById('setting-bible-toggle').checked;
+    state.contextWindow  = parseInt(document.getElementById('setting-context').value);
     saveState();
 }
 
 function debounceSaveSettings() {
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => { saveSettings(); showToast("Settings saved"); }, 1000);
+    saveTimeout = setTimeout(() => { saveSettings(); showToast('Settings saved'); }, 1000);
 }
 
-// --- SETTINGS ---
 function initSettings() {
-    const providerSelect = document.getElementById('setting-provider');
-    const knownProviders = ['openrouter', 'anthropic', 'openai'];
-    if (knownProviders.includes(state.provider)) {
-        providerSelect.value = state.provider;
+    const known = ['openrouter','anthropic','openai'];
+    const sel   = document.getElementById('setting-provider');
+    if (known.includes(state.provider)) {
+        sel.value = state.provider;
         document.getElementById('custom-provider-row').classList.add('hidden');
     } else {
-        providerSelect.value = 'custom';
-        document.getElementById('setting-custom-provider').value = state.provider === 'custom' ? '' : state.provider;
+        sel.value = 'custom';
+        document.getElementById('setting-custom-provider').value =
+            state.provider === 'custom' ? '' : state.provider;
         document.getElementById('custom-provider-row').classList.remove('hidden');
     }
-
-    document.getElementById('setting-model').value = state.model || 'z-ai/glm-4.5-air:free';
-    document.getElementById('setting-sys-template').value = state.systemTemplate || defaultState.systemTemplate;
-    document.getElementById('setting-bible-toggle').checked = state.bibleToggle;
-    document.getElementById('setting-context').value = state.contextWindow;
-    document.getElementById('ctx-val').innerText = state.contextWindow;
+    document.getElementById('setting-model').value          = state.model          || 'z-ai/glm-4.5-air:free';
+    document.getElementById('setting-sys-template').value   = state.systemTemplate || defaultState.systemTemplate;
+    document.getElementById('setting-bible-toggle').checked = state.bibleToggle !== false;
+    document.getElementById('setting-context').value        = state.contextWindow  || 15;
+    document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
 }
 
 function handleProviderChange() {
-    const provider = document.getElementById('setting-provider').value;
-    const modelInput = document.getElementById('setting-model');
-    const customRow = document.getElementById('custom-provider-row');
-
-    if (provider === 'custom') {
-        customRow.classList.remove('hidden');
-    } else {
-        customRow.classList.add('hidden');
-    }
-
-    const defaults = {
-        openrouter: 'z-ai/glm-4.5-air:free',
-        anthropic:  'claude-sonnet-4-6',
-        openai:     'gpt-3.5-turbo',
-        custom:     ''
-    };
-    if (state.provider !== provider && defaults[provider] !== undefined) {
-        modelInput.value = defaults[provider];
-    }
+    const p = document.getElementById('setting-provider').value;
+    document.getElementById('custom-provider-row').classList.toggle('hidden', p !== 'custom');
+    const defaults = { openrouter:'z-ai/glm-4.5-air:free', anthropic:'claude-sonnet-4-6', openai:'gpt-3.5-turbo', custom:'' };
+    if (state.provider !== p && defaults[p] !== undefined)
+        document.getElementById('setting-model').value = defaults[p];
     debounceSaveSettings();
 }
 
@@ -438,89 +672,90 @@ function updateRangeValue() {
 }
 
 function resetSystemTemplate() {
-    if (confirm("Reset template to default?")) {
+    if (confirm('Reset system template to default?')) {
         document.getElementById('setting-sys-template').value = defaultState.systemTemplate;
         debounceSaveSettings();
     }
 }
 
-function previewSystemPrompt() { alert("Preview:\n\n" + constructSystemPrompt()); }
+function previewSystemPrompt() { alert('System Prompt Preview:\n\n' + constructSystemPrompt()); }
 
-// --- BIBLE ---
+// ─────────────────────────────────────────
+// BIBLE
+// ─────────────────────────────────────────
 function initBible() {
     document.getElementById('bible-input').value = state.bible || '';
     updateBibleCount();
 }
-
 function debounceSaveBible() {
-    document.getElementById('bible-status').innerText = "Typing...";
+    document.getElementById('bible-status').innerText = 'Typing...';
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
         state.bible = document.getElementById('bible-input').value;
         saveState();
-        document.getElementById('bible-status').innerText = "Saved ✓";
+        document.getElementById('bible-status').innerText = 'Saved ✓';
         updateBibleCount();
     }, 1000);
 }
-
 function updateBibleCount() {
-    const len = (state.bible || "").length;
-    const el = document.getElementById('bible-count');
-    el.innerText = `${len} chars`;
+    const len = (state.bible || '').length;
+    const el  = document.getElementById('bible-count');
+    el.innerText   = `${len} chars`;
     el.style.color = len > 4000 ? 'orange' : 'var(--success)';
 }
 
-// --- CHARACTERS ---
+// ─────────────────────────────────────────
+// CHARACTERS
+// ─────────────────────────────────────────
 function initCharacters() { renderCharacterList(); }
 
 function renderCharacterList() {
-    const container = document.getElementById('character-list');
-    container.innerHTML = '';
+    const c = document.getElementById('character-list');
+    c.innerHTML = '';
     state.characters.forEach(char => {
         const el = document.createElement('div');
         el.className = `char-item ${state.activeCharId === char.id ? 'active-char' : ''}`;
-        el.onclick = () => selectCharacter(char.id);
+        el.onclick   = () => selectCharacter(char.id);
         el.innerHTML = `
             <div class="char-avatar"></div>
             <div class="char-info">
                 <div class="char-name">${char.name}</div>
                 <div class="char-personality">${char.desc}</div>
             </div>
-            <button class="char-edit-btn" onclick="event.stopPropagation(); openCharModal('${char.id}')" title="Edit">
+            <button class="char-edit-btn" onclick="event.stopPropagation();openCharModal('${char.id}')" title="Edit">
                 <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             </button>`;
-        container.appendChild(el);
+        c.appendChild(el);
     });
 }
 
 function openCharModal(charId = null) {
-    const modal = document.getElementById('char-modal');
+    const modal  = document.getElementById('char-modal');
     const delBtn = document.getElementById('btn-delete-char');
     if (charId) {
-        const char = state.characters.find(c => c.id === charId);
-        document.getElementById('char-name').value = char.name;
-        document.getElementById('char-desc').value = char.desc;
-        document.getElementById('char-id').value = char.id;
+        const ch = state.characters.find(c => c.id === charId);
+        document.getElementById('char-name').value = ch.name;
+        document.getElementById('char-desc').value = ch.desc;
+        document.getElementById('char-id').value   = ch.id;
         delBtn.classList.remove('hidden');
     } else {
         document.getElementById('char-name').value = '';
         document.getElementById('char-desc').value = '';
-        document.getElementById('char-id').value = '';
+        document.getElementById('char-id').value   = '';
         delBtn.classList.add('hidden');
     }
     modal.classList.add('open');
 }
-
 function closeCharModal() { document.getElementById('char-modal').classList.remove('open'); }
 
 function saveCharacter() {
-    const id = document.getElementById('char-id').value;
-    const name = document.getElementById('char-name').value;
-    const desc = document.getElementById('char-desc').value;
-    if (!name) return alert("Name required");
+    const id   = document.getElementById('char-id').value;
+    const name = document.getElementById('char-name').value.trim();
+    const desc = document.getElementById('char-desc').value.trim();
+    if (!name) return alert('Name required');
     if (id) {
-        const char = state.characters.find(c => c.id === id);
-        char.name = name; char.desc = desc;
+        const c = state.characters.find(c => c.id === id);
+        c.name = name; c.desc = desc;
     } else {
         state.characters.push({ id: generateId(), name, desc });
     }
@@ -529,72 +764,80 @@ function saveCharacter() {
 
 function deleteCharacter() {
     const id = document.getElementById('char-id').value;
-    if (confirm("Delete this character?")) {
-        state.characters = state.characters.filter(c => c.id !== id);
+    if (confirm('Delete this character?')) {
+        state.characters  = state.characters.filter(c => c.id !== id);
         if (state.activeCharId === id) state.activeCharId = null;
-        saveState(); renderCharacterList(); closeCharModal();
+        saveState(); renderCharacterList(); closeCharModal(); updateCharBadge();
     }
 }
 
 function selectCharacter(id) {
     state.activeCharId = id;
-    saveState(); renderCharacterList(); navTo('chat');
+    saveState(); renderCharacterList(); updateCharBadge(); navTo('chat');
 }
 
-// --- CHAPTERS ---
+/**
+ * Keep the Active Character badge + header title in sync.
+ * Called on select, render, init, and restore.
+ */
+function updateCharBadge() {
+    const char = state.characters.find(c => c.id === state.activeCharId);
+    const name = char ? char.name : 'None';
+    document.getElementById('badge-char-name').innerText  = name;
+    document.getElementById('chat-active-name').innerText = char ? char.name : 'No Character Selected';
+}
+
+// ─────────────────────────────────────────
+// CHAPTERS
+// ─────────────────────────────────────────
 function initChapters() {
     if (!state.chapters || state.chapters.length === 0) addChapter();
     renderChapterTabs();
 }
-
 function renderChapterTabs() {
-    const container = document.getElementById('chapter-tabs');
-    container.innerHTML = '';
+    const c = document.getElementById('chapter-tabs');
+    c.innerHTML = '';
     state.chapters.forEach(ch => {
         const el = document.createElement('button');
         el.className = `chapter-tab ${state.activeChapterId === ch.id ? 'active' : ''}`;
-        el.innerText = ch.title || "Untitled";
-        el.onclick = () => loadChapter(ch.id);
-        container.appendChild(el);
+        el.innerText = ch.title || 'Untitled';
+        el.onclick   = () => loadChapter(ch.id);
+        c.appendChild(el);
     });
-    if (state.activeChapterId) loadChapter(state.activeChapterId);
-    else if (state.chapters.length > 0) loadChapter(state.chapters[0].id);
+    const target = state.activeChapterId || (state.chapters[0] && state.chapters[0].id);
+    if (target) loadChapter(target);
 }
-
 function addChapter() {
-    const newCh = { id: generateId(), title: "New Chapter", summary: "", notes: "" };
-    state.chapters.push(newCh);
-    state.activeChapterId = newCh.id;
-    state.chatHistory[newCh.id] = [];
-    saveState(); renderChapterTabs(); loadChapter(newCh.id);
+    const ch = { id: generateId(), title: 'New Chapter', summary: '', notes: '' };
+    state.chapters.push(ch);
+    state.activeChapterId  = ch.id;
+    state.chatHistory[ch.id] = [];
+    saveState(); renderChapterTabs(); loadChapter(ch.id);
 }
-
 function loadChapter(id) {
     state.activeChapterId = id;
     const ch = state.chapters.find(c => c.id === id);
-    document.getElementById('chapter-title').value = ch.title;
+    document.getElementById('chapter-title').value   = ch.title;
     document.getElementById('chapter-summary').value = ch.summary;
-    document.getElementById('chapter-notes').value = ch.notes;
+    document.getElementById('chapter-notes').value   = ch.notes;
     if (!state.chatHistory[id]) state.chatHistory[id] = [];
     saveState();
 }
-
 function debounceSaveChapters() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
         const ch = state.chapters.find(c => c.id === state.activeChapterId);
         if (ch) {
-            ch.title = document.getElementById('chapter-title').value;
+            ch.title   = document.getElementById('chapter-title').value;
             ch.summary = document.getElementById('chapter-summary').value;
-            ch.notes = document.getElementById('chapter-notes').value;
+            ch.notes   = document.getElementById('chapter-notes').value;
             saveState(); renderChapterTabs();
         }
     }, 500);
 }
-
 function deleteCurrentChapter() {
-    if (state.chapters.length <= 1) return alert("You must have at least one chapter.");
-    if (confirm("Delete this chapter and its history?")) {
+    if (state.chapters.length <= 1) return alert('You must have at least one chapter.');
+    if (confirm('Delete this chapter and its history?')) {
         const idx = state.chapters.findIndex(c => c.id === state.activeChapterId);
         state.chapters.splice(idx, 1);
         delete state.chatHistory[state.activeChapterId];
@@ -603,36 +846,22 @@ function deleteCurrentChapter() {
     }
 }
 
-// --- CHAT ---
-function constructSystemPrompt() {
-    const char = state.characters.find(c => c.id === state.activeCharId);
-    const charDesc = char ? `${char.name}: ${char.desc}` : "Unknown Character";
-    const ch = state.chapters.find(c => c.id === state.activeChapterId);
-    const summary = ch ? ch.summary : "No context";
-    const bibleText = state.bibleToggle ? (state.bible || "") : "";
-    return (state.systemTemplate || defaultState.systemTemplate)
-        .replace('{{bible}}', bibleText)
-        .replace('{{char}}', charDesc)
-        .replace('{{summary}}', summary);
-}
-
+// ─────────────────────────────────────────
+// CHAT RENDER
+// ─────────────────────────────────────────
 function renderChat() {
     const container = document.getElementById('chat-container');
-    const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+    const atBottom  = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+    updateCharBadge();
+
     const char = state.characters.find(c => c.id === state.activeCharId);
-    
     if (!char) {
-        document.getElementById('chat-active-name').innerText = "No Character Selected";
-        document.getElementById('chat-active-persona').innerText = "Go to Cast to select a character.";
-        container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Select a character to begin.</p></div>`;
+        container.innerHTML = `<div style="text-align:center;color:var(--muted);margin-top:50px;"><p>Go to Cast and select a character to begin.</p></div>`;
         return;
     }
-    document.getElementById('chat-active-name').innerText = char.name;
-    document.getElementById('chat-active-persona').innerText = char.desc;
-
     const messages = state.chatHistory[state.activeChapterId] || [];
     if (messages.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:var(--secondary-text); margin-top:50px;"><p>Start of conversation.</p></div>`;
+        container.innerHTML = `<div style="text-align:center;color:var(--muted);margin-top:50px;"><p>Start of conversation with <strong>${char.name}</strong>.</p></div>`;
         return;
     }
     container.innerHTML = '';
@@ -642,146 +871,149 @@ function renderChat() {
         el.innerText = msg.content;
         container.appendChild(el);
     });
-    if (wasAtBottom) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+    if (atBottom) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
 
 function clearChatHistory() {
-    if (confirm("Clear chat history for this chapter?")) {
+    if (confirm('Clear chat history for this chapter?')) {
         state.chatHistory[state.activeChapterId] = [];
         saveState(); renderChat();
     }
 }
 
+// ─────────────────────────────────────────
+// EXPORT / RESTORE
+// ─────────────────────────────────────────
 function exportChat() {
-    const messages = state.chatHistory[state.activeChapterId] || [];
-    let text = `Chat Export - ${new Date().toLocaleString()}\n\n`;
-    messages.forEach(m => { text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-    a.download = `rp-chat-${Date.now()}.txt`;
-    a.click();
+    const msgs = state.chatHistory[state.activeChapterId] || [];
+    let text   = `Chat Export — ${new Date().toLocaleString()}\n\n`;
+    msgs.forEach(m => { text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
+    dl(text, `rp-chat-${Date.now()}.txt`, 'text/plain');
 }
-
 function exportStateJSON() {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
-    a.download = `rp-companion-backup-${Date.now()}.json`;
-    a.click();
-    showToast("Backup saved to your device!");
+    dl(JSON.stringify(state, null, 2), `rp-companion-backup-${Date.now()}.json`, 'application/json');
+    showToast('Backup saved!');
 }
-
+function dl(content, filename, type) {
+    const a = document.createElement('a');
+    a.href  = URL.createObjectURL(new Blob([content], { type }));
+    a.download = filename; a.click();
+}
 function restoreStateJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const restored = JSON.parse(e.target.result);
-            if (!restored.characters || !restored.chapters) {
-                alert("Invalid backup file."); return;
-            }
-            if (!confirm("Restore this backup? This will replace ALL current data.\n\nThis cannot be undone!")) {
+            const r = JSON.parse(e.target.result);
+            if (!r.characters || !r.chapters) { alert('Invalid backup file.'); return; }
+            if (!confirm('Restore this backup? This replaces ALL current data and cannot be undone!')) {
                 document.getElementById('restore-file-input').value = ''; return;
             }
-            state = restored;
-            // Migrate mancer on restore
-            if (state.provider === 'mancer') {
-                state.provider = 'openrouter';
-                state.model = 'z-ai/glm-4.5-air:free';
-            }
+            state = r;
+            if (state.provider === 'mancer')       { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
+            if (state.directorEnabled      == null) state.directorEnabled      = false;
+            if (state.directorInstructions == null) state.directorInstructions = '';
             localStorage.setItem('rp-companion-state', JSON.stringify(state));
-            initSettings(); initBible(); initCharacters(); initChapters(); renderChat();
+            initSettings(); initBible(); initCharacters(); initChapters();
+            applyDirectorUI(); updateCharBadge(); renderChat();
             document.getElementById('restore-file-input').value = '';
-            showToast("Backup restored successfully!");
-            navTo('chat');
-        } catch (err) {
-            alert("Failed to restore backup: " + err.message);
+            showToast('Backup restored!'); navTo('chat');
+        } catch(err) {
+            alert('Failed to restore: ' + err.message);
             document.getElementById('restore-file-input').value = '';
         }
     };
     reader.readAsText(file);
 }
 
-function autoResizeTextarea(textarea) {
-    textarea.style.height = '48px';
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    const scrollPos = document.getElementById('chat-container').scrollTop;
-    requestAnimationFrame(() => { document.getElementById('chat-container').scrollTop = scrollPos; });
+// ─────────────────────────────────────────
+// CHAT INPUT
+// ─────────────────────────────────────────
+function autoResizeTextarea(ta) {
+    ta.style.height = '48px';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
 }
-
 function checkEnter(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
+// ─────────────────────────────────────────
+// SEND MESSAGE
+//
+// Director's Mode works entirely through the system prompt:
+//   - Instructions are injected via constructSystemPrompt() → {{director}} tag
+//   - They are NEVER added as chat messages
+//   - Chat history stays clean: only role+content from user/assistant
+//   - reasoning_content and any extra fields are stripped from API payload
+// ─────────────────────────────────────────
 async function sendMessage() {
-    if (!state.activeCharId) return showToast("Select a character first");
+    if (!state.activeCharId)    return showToast('Select a character first');
     if (!state.activeChapterId) return;
+
     const input = document.getElementById('chat-input');
-    const text = input.value.trim();
+    const text  = input.value.trim();
     if (!text) return;
 
-    const chatContainer = document.getElementById('chat-container');
-    const shouldScroll = chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 100;
+    const cc          = document.getElementById('chat-container');
+    const shouldScroll = cc.scrollHeight - cc.scrollTop <= cc.clientHeight + 100;
     input.value = ''; input.style.height = '48px';
 
     const msgs = state.chatHistory[state.activeChapterId];
     msgs.push({ role: 'user', content: text });
     saveState(); renderChat();
-    if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
+    if (shouldScroll) cc.scrollTop = cc.scrollHeight;
 
-    // Build API messages — strip extra fields (e.g. reasoning_content) so strict
-    // APIs like Anthropic don't reject the payload with "Extra inputs are not permitted".
-    let apiMessages = [{ role: 'system', content: constructSystemPrompt() }];
-    apiMessages = apiMessages.concat(
-        msgs.slice(-(state.contextWindow * 2)).map(m => ({
-            role: m.role,
-            content: m.content
-        }))
-    );
-
-    const provider = state.provider;
-    const model = state.model;
+    // Strip ALL extra fields — only role + content go to API
+    const apiMessages = [
+        { role: 'system', content: constructSystemPrompt() },
+        ...msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content }))
+    ];
 
     let loadId;
     try {
         loadId = 'loading-' + Date.now();
         const loadEl = document.createElement('div');
         loadEl.className = 'msg msg-ai'; loadEl.id = loadId;
-        loadEl.innerHTML = '<div class="spinner" style="display:inline-block; width:14px; height:14px; border-width:2px;"></div>';
-        chatContainer.appendChild(loadEl);
-        if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
+        loadEl.innerHTML = '<div class="spinner" style="display:inline-block;width:14px;height:14px;border-width:2px;"></div>';
+        cc.appendChild(loadEl);
+        if (shouldScroll) cc.scrollTop = cc.scrollHeight;
 
-        const response = await fetch('/api/chat', {
+        const res  = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider, model, messages: apiMessages })
+            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages })
         });
-        const data = await response.json();
+        const data = await res.json();
         document.getElementById(loadId)?.remove();
 
-        if (response.ok) {
-            const aiMsg = data.choices[0].message;
-            // Store full message including reasoning_content locally for reference,
-            // but it will never be sent back to the API (stripped above).
+        if (res.ok) {
+            const aiMsg  = data.choices[0].message;
             const toSave = { role: 'assistant', content: aiMsg.content };
             if (aiMsg.reasoning_content) toSave.reasoning_content = aiMsg.reasoning_content;
             msgs.push(toSave);
             saveState(); renderChat();
         } else {
-            alert("Server Error: " + (data.error || "Unknown Error"));
+            alert('Server Error: ' + (data.error || 'Unknown error'));
         }
-    } catch (err) {
+    } catch(err) {
         document.getElementById(loadId)?.remove();
-        alert("Network Error: " + err.message);
+        alert('Network Error: ' + err.message);
     }
 }
 
-// --- INIT ---
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-    initSettings(); initBible(); initCharacters(); initChapters();
+    initSettings();
+    initBible();
+    initCharacters();
+    initChapters();
+    applyDirectorUI();
+    updateCharBadge();
     document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
     navTo('chat');
 });
-    </script>
+</script>
 </body>
 </html>
