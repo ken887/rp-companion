@@ -56,10 +56,10 @@ app.post('/api/chat', async (req, res) => {
             messages: messages,
             temperature: 0.7,
             max_tokens: 1024,
-            thinking: {
-                type: "enabled",
-                clear_thinking: true
-            }
+            //thinking: {		remove the thinking block
+                //type: "enabled",
+                //clear_thinking: true
+            //}
         };
 
     } else if (provider === 'openrouter') {
