@@ -147,8 +147,9 @@
         #director-instructions {
             width: 100%; background: #2a1f00; border: 1px solid var(--dir-border);
             color: #fde68a; padding: 10px; border-radius: 6px; font-size: .88rem;
-            margin-bottom: 8px; resize: vertical; min-height: 72px;
-            font-family: inherit; transition: border-color .2s; line-height: 1.5;
+            margin-bottom: 8px; resize: both; min-height: 110px; max-height: 55vh;
+            font-family: inherit; transition: border-color .2s; line-height: 1.6;
+            overflow-y: auto;
         }
         #director-instructions:focus { border-color: var(--dir-text); outline: none; }
         #director-instructions::placeholder { color: var(--dir-dim); }
@@ -185,6 +186,28 @@
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .close-btn { background: none; border: none; font-size: 1.5rem; color: var(--muted); padding: 0; cursor: pointer; }
 
+        /* ── COPY BUTTON ON MESSAGES ── */
+        .msg-wrap { display: flex; flex-direction: column; max-width: 85%; }
+        .msg-wrap.user-wrap { align-self: flex-end; align-items: flex-end; }
+        .msg-wrap.ai-wrap   { align-self: flex-start; align-items: flex-start; }
+        .msg { max-width: 100%; }
+        .msg-meta {
+            display: flex; align-items: center; gap: 6px;
+            margin-top: 3px; opacity: 0; transition: opacity .2s;
+        }
+        .msg-wrap:hover .msg-meta { opacity: 1; }
+        .msg-num { font-size: .65rem; color: #555; }
+        .btn-copy-msg {
+            background: none; border: none; cursor: pointer;
+            padding: 2px 4px; border-radius: 4px;
+            color: #555; transition: color .2s, background .2s;
+            display: flex; align-items: center; gap: 3px;
+            font-size: .68rem;
+        }
+        .btn-copy-msg:hover { color: var(--primary); background: rgba(59,130,246,.1); }
+        .btn-copy-msg svg { width: 12px; height: 12px; fill: currentColor; }
+        .btn-copy-msg.copied { color: var(--success); }
+
         /* ── MISC ── */
         .hidden { display: none !important; }
         .spinner { border: 3px solid rgba(255,255,255,.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
@@ -202,7 +225,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.0 — Director's Mode)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.a — Director's Mode resize)</span></h2>
 
     <div class="setting-group">
         <label>API Provider</label>
@@ -875,11 +898,32 @@ function renderChat() {
         return;
     }
     container.innerHTML = '';
-    messages.forEach(msg => {
-        const el = document.createElement('div');
-        el.className = `msg ${msg.role === 'user' ? 'msg-user' : 'msg-ai'}`;
-        el.innerText = msg.content;
-        container.appendChild(el);
+    messages.forEach((msg, idx) => {
+        const isUser = msg.role === 'user';
+        const msgNum = idx + 1;
+
+        // Wrapper
+        const wrap = document.createElement('div');
+        wrap.className = `msg-wrap ${isUser ? 'user-wrap' : 'ai-wrap'}`;
+
+        // Bubble
+        const bubble = document.createElement('div');
+        bubble.className = `msg ${isUser ? 'msg-user' : 'msg-ai'}`;
+        bubble.innerText = msg.content;
+
+        // Meta row (number + copy button) — visible on hover
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        meta.innerHTML = `
+            <span class="msg-num">#${msgNum}</span>
+            <button class="btn-copy-msg" title="Copy message #${msgNum}" onclick="copyMsg(this, ${idx})">
+                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                Copy
+            </button>`;
+
+        wrap.appendChild(bubble);
+        wrap.appendChild(meta);
+        container.appendChild(wrap);
     });
     if (atBottom) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
@@ -889,6 +933,21 @@ function clearChatHistory() {
         state.chatHistory[state.activeChapterId] = [];
         saveState(); renderChat();
     }
+}
+
+/** Copy a specific message by index. Shows brief "Copied!" feedback on the button. */
+function copyMsg(btn, idx) {
+    const msgs = state.chatHistory[state.activeChapterId] || [];
+    const text = msgs[idx] ? msgs[idx].content : '';
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copied!`;
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy`;
+        }, 2000);
+    }).catch(() => showToast('Copy failed — try selecting text manually'));
 }
 
 // ─────────────────────────────────────────
