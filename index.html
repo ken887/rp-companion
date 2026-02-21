@@ -368,13 +368,23 @@
         </p>
         <textarea
             id="director-instructions"
-            placeholder="e.g. Keep responses concise (2–3 sentences). Shift tone darker and more tense. Make Victoria hesitant about revealing her secret. Avoid using the word 'suddenly'..."
+            placeholder="Examples of guidance you can give here:
+• Slow the pace down — build tension before revealing anything.
+• Keep the character guarded and evasive. They don't give answers freely.
+• Lean into the dark atmosphere. Less warmth, more unease.
+• Raise the emotional stakes. The character is running out of time.
+• Remember: the village fire happened 3 years ago — the character still carries guilt from it.
+• Avoid resolving conflict too quickly. Let it simmer across messages.
+• Write in shorter exchanges. Show emotions, don't explain them."
             oninput="directorTyping()"></textarea>
         <div class="director-panel-actions">
             <button class="btn-dir-save" onclick="saveDirectorInstructions()">💾 Apply</button>
             <button class="btn-dir-clear" onclick="clearDirectorInstructions()">✕ Clear</button>
             <span id="dir-save-status" class="dir-save-status">Applied ✓</span>
         </div>
+        <p style="font-size:.7rem;color:var(--dir-dim);margin:8px 0 0 0;line-height:1.5;">
+            ⚠️ <strong style="color:var(--dir-text);">Remember to toggle Director's Mode OFF</strong> when your guidance is no longer needed — otherwise it continues influencing every AI response.
+        </p>
     </div>
 
     <!-- MESSAGES -->
