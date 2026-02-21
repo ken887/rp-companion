@@ -55,7 +55,7 @@ app.post('/api/chat', async (req, res) => {
             model: model,
             messages: messages,
             temperature: 0.7,
-            max_tokens: 1024,
+            max_tokens: 2048,  // increased from 1024
             //thinking: {		remove the thinking block
                 //type: "enabled",
                 //clear_thinking: true
