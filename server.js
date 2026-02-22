@@ -1,5 +1,5 @@
 // server.js - Railway Backend
-// v1.2.2f — BYOK support + Draft Assistant endpoint turn of thinking mode in mancer 
+// v1.2.2g — BYOK support + Draft Assistant endpoint using claude
 
 const express = require('express');
 const cors    = require('cors');
@@ -36,12 +36,23 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
     const API_KEY = userApiKey || process.env.MANCER_API_KEY;
     if (!API_KEY) throw new Error('Mancer API Key not configured. Add MANCER_API_KEY to Railway env vars or provide your own key.');
     headers['X-API-KEY'] = API_KEY;
+    // Dual thinking suppression for Mancer/GLM:
+    // enable_thinking:false (param) + /nothink appended to last user message
+    const mancerMessages = [...messages];
+    const lastUserIdx = [...mancerMessages].reverse().findIndex(m => m.role === 'user');
+    if (lastUserIdx !== -1) {
+      const realIdx = mancerMessages.length - 1 - lastUserIdx;
+      mancerMessages[realIdx] = {
+        ...mancerMessages[realIdx],
+        content: mancerMessages[realIdx].content + '\n/nothink'
+      };
+    }
     body = {
       model,
-      messages,
-      temperature:      0.7,
-      max_tokens:       2048,
-      enable_thinking:  false   // suppress thinking output for Mancer/GLM models
+      messages:        mancerMessages,
+      temperature:     0.7,
+      max_tokens:      2048,
+      enable_thinking: false
     };
 
   // ── OPENROUTER ──
@@ -67,16 +78,41 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
     apiUrl = 'https://api.anthropic.com/v1/messages';
     const API_KEY = userApiKey || process.env.ANTHROPIC_API_KEY;
     if (!API_KEY) throw new Error('Anthropic API Key not configured. Add ANTHROPIC_API_KEY to Railway env vars or provide your own key.');
-    headers['x-api-key']          = API_KEY;
-    headers['anthropic-version']  = '2023-06-01';
+    headers['x-api-key']         = API_KEY;
+    headers['anthropic-version'] = '2023-06-01';
 
-    // Anthropic separates system prompt from messages
-    let systemMsg  = '';
-    const apiMsgs  = messages.filter(m => {
+    // Extract system message
+    let systemMsg = '';
+    let apiMsgs   = messages.filter(m => {
       if (m.role === 'system') { systemMsg = m.content; return false; }
       return true;
     });
-    body = { model, max_tokens: 1024, system: systemMsg, messages: apiMsgs };
+
+    // Anthropic requires strict user/assistant alternation.
+    // Sanitise: merge consecutive same-role messages into one.
+    const sanitised = [];
+    for (const msg of apiMsgs) {
+      const prev = sanitised[sanitised.length - 1];
+      if (prev && prev.role === msg.role) {
+        // Merge into previous message
+        prev.content += '\n\n' + msg.content;
+      } else {
+        sanitised.push({ role: msg.role, content: msg.content });
+      }
+    }
+
+    // Anthropic also requires the conversation to END with a user message
+    // If last message is assistant, append a minimal user continuation prompt
+    if (sanitised.length > 0 && sanitised[sanitised.length - 1].role === 'assistant') {
+      sanitised.push({ role: 'user', content: 'Please continue.' });
+    }
+
+    // Must have at least one user message
+    if (sanitised.length === 0) {
+      sanitised.push({ role: 'user', content: 'Begin.' });
+    }
+
+    body = { model, max_tokens: 1024, system: systemMsg, messages: sanitised };
 
   } else {
     throw new Error('Unknown provider: ' + provider);
@@ -212,34 +248,41 @@ ${draftPrompt}` : ''}`;
     }).join('\n\n');
 
     // ── BUILD MESSAGES FOR PROVIDER ──
-    // For Anthropic: system is separate, transcript goes in user turn
-    // For others: system in messages array as role:system
-    let draftMessages;
+    // Single user message containing the full labelled transcript.
+    // buildProviderConfig handles Anthropic's system/messages separation automatically.
+    const transcriptUserMsg =
+      `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\n` +
+      `Now write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.`;
 
-    if (provider === 'anthropic') {
-      // Anthropic handles system separately via buildProviderConfig
-      draftMessages = [
-        { role: 'system', content: draftSystemPrompt },
-        { role: 'user',   content: `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\nNow write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.` }
-      ];
-    } else {
-      draftMessages = [
-        { role: 'system', content: draftSystemPrompt },
-        { role: 'user',   content: `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\nNow write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.` }
-      ];
-    }
+    const draftMessages = [
+      { role: 'system', content: draftSystemPrompt },
+      { role: 'user',   content: transcriptUserMsg }
+    ];
 
     // ── BUILD PROVIDER CONFIG ──
     const { apiUrl, headers, body } = buildProviderConfig(
       provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
+    // ── ANTHROPIC: bump max_tokens for draft responses ──
+    if (provider === 'anthropic') {
+      body.max_tokens = 2048;
+    }
+
     // ── SUPPRESS THINKING for Mancer/GLM models ──
-    // Mancer uses enable_thinking:false to prevent reasoning_content leaking into output
-    // Applied to any Mancer provider call OR any model name containing 'glm'
+    // Dual approach for maximum reliability:
+    // 1. enable_thinking: false — request param supported by Mancer
+    // 2. /nothink appended to user message — Mancer's most reliable fallback
     if (provider === 'mancer' || model.toLowerCase().includes('glm')) {
       body.enable_thinking = false;
-      console.log('Draft: thinking suppressed (Mancer/GLM)');
+      // Append /nothink to the last user message in body.messages
+      if (Array.isArray(body.messages)) {
+        const lastMsg = body.messages[body.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'user') {
+          lastMsg.content += '\n/nothink';
+        }
+      }
+      console.log('Draft: thinking suppressed via enable_thinking:false + /nothink');
     }
 
     console.log('Calling Draft API:', apiUrl);
@@ -260,7 +303,7 @@ ${draftPrompt}` : ''}`;
 // START
 // ─────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 RP Companion server v1.2.2f running on port ${PORT}`);
+  console.log(`🚀 RP Companion server v1.2.2 running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log('');
   console.log('Endpoints:');
