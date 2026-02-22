@@ -176,7 +176,26 @@
         .msg-ai   { align-self: flex-start; background: var(--ai-bubble); color: #e5e5e5; border-bottom-left-radius: 2px; }
 
         /* ── CHAT INPUT ── */
-        .chat-input-area { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
+        .chat-input-area {
+            background: var(--surface); padding: 10px;
+            border-top: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
+        }
+        #chat-input {
+            flex: 1; margin-bottom: 0; resize: none;
+            min-height: 56px; max-height: 160px;
+            overflow-y: auto; line-height: 1.5;
+            font-size: 16px; /* prevents iOS zoom on focus */
+            padding: 10px 12px;
+            border-radius: 10px;
+            -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+        }
+        #send-btn {
+            height: 56px; width: 56px; min-width: 56px;
+            padding: 0; display: flex; align-items: center;
+            justify-content: center; border-radius: 10px;
+            flex-shrink: 0;
+        }
         .chat-footer-buttons { text-align: center; padding: 8px 5px; background: #121212; display: flex; justify-content: center; gap: 8px; border-top: 1px solid #222; flex-shrink: 0; flex-wrap: wrap; }
 
         /* ── MODAL ── */
@@ -218,9 +237,13 @@
         .draft-panel-header { font-size: .73rem; color: #818cf8; font-weight: 600; margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center; }
         .draft-guidance {
             width: 100%; background: #151c33; border: 1px solid #2d3f6e;
-            color: #c7d2fe; padding: 7px 9px; border-radius: 5px;
-            font-size: .82rem; margin-bottom: 7px; resize: vertical;
-            min-height: 50px; font-family: inherit; line-height: 1.4;
+            color: #c7d2fe; padding: 8px 10px; border-radius: 5px;
+            font-size: 16px; /* prevents iOS zoom */
+            margin-bottom: 7px; resize: vertical;
+            min-height: 70px; max-height: 200px;
+            font-family: inherit; line-height: 1.5;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .draft-guidance::placeholder { color: #3d4f7a; }
         .draft-guidance:focus { outline: none; border-color: #818cf8; }
@@ -267,7 +290,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2 — BYOK + Draft Assistant)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2a — BYOK + Draft Assistant)</span></h2>
 
     <div class="setting-group">
         <label>API Provider</label>
@@ -524,14 +547,11 @@
 
     <!-- CHAT INPUT -->
     <div class="chat-input-area">
-        <textarea id="chat-input" rows="1"
+        <textarea id="chat-input" rows="2"
             placeholder="Type a message..."
-            style="margin-bottom:0;resize:none;max-height:120px;overflow-y:auto;"
             oninput="autoResizeTextarea(this)"
             onkeydown="checkEnter(event)"></textarea>
-        <button class="btn btn-small" id="send-btn"
-            style="height:48px;width:48px;padding:0;display:flex;align-items:center;justify-content:center;"
-            onclick="sendMessage()">
+        <button class="btn btn-small" id="send-btn" onclick="sendMessage()">
             <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:white;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </div>
@@ -1111,8 +1131,8 @@ const BYOK_MODEL_DEFAULTS = {
 function loadBYOK() {
     const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
 
-    // Key source radio
-    const source = byok.keySource || 'byok';
+    // Key source radio — default to 'server' for ease of testing
+    const source = byok.keySource || 'server';
     const radio  = document.getElementById(source === 'server' ? 'draft-use-server' : 'draft-use-byok');
     if (radio) radio.checked = true;
 
@@ -1399,8 +1419,12 @@ function restoreStateJSON(event) {
 // CHAT INPUT
 // ─────────────────────────────────────────
 function autoResizeTextarea(ta) {
-    ta.style.height = '48px';
-    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    // Reset to min-height first so shrinking works correctly
+    ta.style.height = '56px';
+    const newHeight = Math.min(ta.scrollHeight, 160);
+    ta.style.height = newHeight + 'px';
+    // Allow scroll when content exceeds max height
+    ta.style.overflowY = ta.scrollHeight > 160 ? 'auto' : 'hidden';
 }
 function checkEnter(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
