@@ -1,5 +1,5 @@
 // server.js - Railway Backend
-// v1.2.2e — BYOK support + Draft Assistant endpoint errorusing anthropics and chain of thoughts of glm-4.7 issues
+// v1.2.2f — BYOK support + Draft Assistant endpoint turn of thinking mode in mancer 
 
 const express = require('express');
 const cors    = require('cors');
@@ -36,7 +36,13 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
     const API_KEY = userApiKey || process.env.MANCER_API_KEY;
     if (!API_KEY) throw new Error('Mancer API Key not configured. Add MANCER_API_KEY to Railway env vars or provide your own key.');
     headers['X-API-KEY'] = API_KEY;
-    body = { model, messages, temperature: 0.7, max_tokens: 2048 };
+    body = {
+      model,
+      messages,
+      temperature:      0.7,
+      max_tokens:       2048,
+      enable_thinking:  false   // suppress thinking output for Mancer/GLM models
+    };
 
   // ── OPENROUTER ──
   } else if (provider === 'openrouter') {
@@ -228,11 +234,12 @@ ${draftPrompt}` : ''}`;
       provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
-    // ── SUPPRESS THINKING for GLM/Mancer models ──
-    // Prevents reasoning_content from leaking into the draft output
-    if (model.toLowerCase().includes('glm') || provider === 'mancer') {
+    // ── SUPPRESS THINKING for Mancer/GLM models ──
+    // Mancer uses enable_thinking:false to prevent reasoning_content leaking into output
+    // Applied to any Mancer provider call OR any model name containing 'glm'
+    if (provider === 'mancer' || model.toLowerCase().includes('glm')) {
       body.enable_thinking = false;
-      console.log('Draft: thinking suppressed for GLM/Mancer model');
+      console.log('Draft: thinking suppressed (Mancer/GLM)');
     }
 
     console.log('Calling Draft API:', apiUrl);
@@ -253,7 +260,7 @@ ${draftPrompt}` : ''}`;
 // START
 // ─────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 RP Companion server v1.2.2 running on port ${PORT}`);
+  console.log(`🚀 RP Companion server v1.2.2f running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log('');
   console.log('Endpoints:');
