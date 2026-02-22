@@ -208,6 +208,48 @@
         .btn-copy-msg svg { width: 12px; height: 12px; fill: currentColor; }
         .btn-copy-msg.copied { color: var(--success); }
 
+        /* ── DRAFT ASSISTANT ── */
+        .draft-panel {
+            align-self: flex-start; width: 85%; margin-top: -8px;
+            background: #0f1629; border: 1px solid #2d3f6e;
+            border-radius: 0 0 10px 10px; padding: 10px 12px;
+            animation: fadeIn .2s ease-out;
+        }
+        .draft-panel-header { font-size: .73rem; color: #818cf8; font-weight: 600; margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center; }
+        .draft-guidance {
+            width: 100%; background: #151c33; border: 1px solid #2d3f6e;
+            color: #c7d2fe; padding: 7px 9px; border-radius: 5px;
+            font-size: .82rem; margin-bottom: 7px; resize: vertical;
+            min-height: 50px; font-family: inherit; line-height: 1.4;
+        }
+        .draft-guidance::placeholder { color: #3d4f7a; }
+        .draft-guidance:focus { outline: none; border-color: #818cf8; }
+        .draft-output {
+            background: #151c33; border: 1px solid #2d3f6e;
+            border-radius: 5px; padding: 8px 10px; font-size: .88rem;
+            color: #e0e7ff; line-height: 1.5; margin-bottom: 7px;
+            white-space: pre-wrap; min-height: 40px;
+        }
+        .draft-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .btn-draft {
+            background: #1e3a8a; color: #93c5fd; border: 1px solid #2d5aa0;
+            padding: 5px 11px; border-radius: 5px; font-size: .76rem;
+            font-weight: 600; cursor: pointer; transition: all .2s;
+        }
+        .btn-draft:hover { background: #2d4fa0; }
+        .btn-draft:disabled { opacity: .4; cursor: not-allowed; }
+        .btn-draft-send { background: #14532d; color: #86efac; border-color: #166534; }
+        .btn-draft-send:hover { background: #166534; }
+        .btn-draft-trigger {
+            background: transparent; border: 1px solid #2d3f6e;
+            color: #818cf8; padding: 3px 9px; border-radius: 5px;
+            font-size: .72rem; cursor: pointer; margin-top: 4px;
+            transition: all .2s; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn-draft-trigger:hover { background: #0f1629; border-color: #818cf8; }
+        .btn-draft-trigger svg { width: 11px; height: 11px; fill: currentColor; }
+        .draft-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(129,140,248,.2); border-top-color: #818cf8; border-radius: 50%; animation: spin 1s linear infinite; }
+
         /* ── MISC ── */
         .hidden { display: none !important; }
         .spinner { border: 3px solid rgba(255,255,255,.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
@@ -225,7 +267,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.a — Director's Mode resize)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2 — BYOK + Draft Assistant)</span></h2>
 
     <div class="setting-group">
         <label>API Provider</label>
@@ -245,9 +287,38 @@
 
     <div class="setting-group">
         <label>API Keys</label>
-        <p style="font-size:.85rem;color:var(--muted);margin-bottom:0;padding:10px;background:#1a2a1a;border-radius:6px;">
-            ✅ API keys are stored securely on the server. Select a provider and start chatting!
-        </p>
+        <!-- AI #1 Server Key -->
+        <div style="background:#1a2a1a;padding:10px;border-radius:6px;margin-bottom:12px;">
+            <div style="font-size:.8rem;font-weight:600;color:var(--success);margin-bottom:4px;">🤖 AI #1 — Victoria (Server Key)</div>
+            <p style="font-size:.78rem;color:var(--muted);margin:0;">✅ Configured securely on the server. No action needed.</p>
+        </div>
+        <!-- AI #2 BYOK Key -->
+        <div style="background:#1a1a2a;padding:10px;border-radius:6px;border:1px solid #2d2d5a;">
+            <div style="font-size:.8rem;font-weight:600;color:#818cf8;margin-bottom:6px;">✍️ AI #2 — Draft Assistant (Your Own Key)</div>
+            <p style="font-size:.75rem;color:var(--muted);margin-bottom:8px;">
+                Stored <strong>locally in your browser only</strong> — never saved to the server.
+                Used exclusively for the Draft Assistant feature.
+            </p>
+            <label style="font-size:.8rem;">Provider for AI #2</label>
+            <select id="byok-provider" onchange="saveBYOK()">
+                <option value="openrouter">OpenRouter</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="openai">OpenAI</option>
+                <option value="mancer">Mancer</option>
+            </select>
+            <label style="font-size:.8rem;">Model for AI #2</label>
+            <input type="text" id="byok-model" placeholder="e.g. z-ai/glm-4.5-air:free" oninput="saveBYOK()">
+            <label style="font-size:.8rem;">Your API Key</label>
+            <div style="position:relative;">
+                <input type="password" id="byok-key" placeholder="Paste your API key here..." oninput="saveBYOK()"
+                    style="padding-right:80px;">
+                <button onclick="toggleBYOKVisibility()" style="position:absolute;right:8px;top:50%;transform:translateY(-65%);background:transparent;border:none;color:var(--muted);font-size:.75rem;cursor:pointer;" id="byok-toggle-vis">Show</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:-8px;">
+                <span id="byok-status" style="font-size:.73rem;color:var(--success);"></span>
+                <button class="btn btn-danger btn-small" onclick="clearBYOK()" style="font-size:.72rem;padding:3px 8px;">Clear Key</button>
+            </div>
+        </div>
     </div>
 
     <div class="setting-group">
@@ -911,7 +982,7 @@ function renderChat() {
         bubble.className = `msg ${isUser ? 'msg-user' : 'msg-ai'}`;
         bubble.innerText = msg.content;
 
-        // Meta row (number + copy button) — visible on hover
+        // Meta row (number + copy button)
         const meta = document.createElement('div');
         meta.className = 'msg-meta';
         meta.innerHTML = `
@@ -923,6 +994,28 @@ function renderChat() {
 
         wrap.appendChild(bubble);
         wrap.appendChild(meta);
+
+        // Draft trigger button — only on AI (Victoria) messages
+        if (!isUser) {
+            const draftTrigger = document.createElement('button');
+            draftTrigger.className = 'btn-draft-trigger';
+            draftTrigger.id = `draft-trigger-${idx}`;
+            draftTrigger.title = 'Generate a draft reply using AI #2 (requires your API key in Settings)';
+            draftTrigger.innerHTML = `
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                ✍️ Draft Reply`;
+            draftTrigger.onclick = () => openDraftPanel(idx);
+            wrap.appendChild(draftTrigger);
+
+            // Draft panel placeholder (hidden until opened)
+            const draftPanel = document.createElement('div');
+            draftPanel.className = 'draft-panel';
+            draftPanel.id = `draft-panel-${idx}`;
+            draftPanel.style.display = 'none';
+            draftPanel.innerHTML = buildDraftPanelHTML(idx);
+            wrap.appendChild(draftPanel);
+        }
+
         container.appendChild(wrap);
     });
     if (atBottom) requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
@@ -948,6 +1041,212 @@ function copyMsg(btn, idx) {
             btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy`;
         }, 2000);
     }).catch(() => showToast('Copy failed — try selecting text manually'));
+}
+
+// ─────────────────────────────────────────
+// BYOK — Bring Your Own Key
+// Stored in localStorage under 'rp-byok'
+// Never included in the main state backup
+// ─────────────────────────────────────────
+function loadBYOK() {
+    const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
+    document.getElementById('byok-key').value      = byok.key      || '';
+    document.getElementById('byok-provider').value = byok.provider || 'openrouter';
+    document.getElementById('byok-model').value    = byok.model    || 'z-ai/glm-4.5-air:free';
+    updateBYOKStatus();
+}
+
+function saveBYOK() {
+    const byok = {
+        key:      document.getElementById('byok-key').value.trim(),
+        provider: document.getElementById('byok-provider').value,
+        model:    document.getElementById('byok-model').value.trim()
+    };
+    localStorage.setItem('rp-byok', JSON.stringify(byok));
+    updateBYOKStatus();
+}
+
+function clearBYOK() {
+    if (!confirm('Clear your stored API key?')) return;
+    localStorage.removeItem('rp-byok');
+    document.getElementById('byok-key').value   = '';
+    document.getElementById('byok-model').value = 'z-ai/glm-4.5-air:free';
+    updateBYOKStatus();
+    showToast('BYOK key cleared');
+}
+
+function updateBYOKStatus() {
+    const byok   = JSON.parse(localStorage.getItem('rp-byok') || '{}');
+    const status = document.getElementById('byok-status');
+    if (byok.key) {
+        status.style.color  = 'var(--success)';
+        status.innerText    = `✅ Key saved (${byok.key.substring(0, 8)}...)`;
+    } else {
+        status.style.color  = '#666';
+        status.innerText    = 'No key stored — Draft Assistant disabled';
+    }
+}
+
+function toggleBYOKVisibility() {
+    const input = document.getElementById('byok-key');
+    const btn   = document.getElementById('byok-toggle-vis');
+    if (input.type === 'password') { input.type = 'text';     btn.innerText = 'Hide'; }
+    else                           { input.type = 'password'; btn.innerText = 'Show'; }
+}
+
+function getBYOK() {
+    return JSON.parse(localStorage.getItem('rp-byok') || '{}');
+}
+
+// ─────────────────────────────────────────
+// DRAFT ASSISTANT — AI #2
+// ─────────────────────────────────────────
+
+/** Build the inner HTML of a draft panel for a given AI message index */
+function buildDraftPanelHTML(idx) {
+    // Find non-Victoria characters for the "draft as" selector
+    const char    = state.characters.find(c => c.id === state.activeCharId);
+    const others  = state.characters.filter(c => c.id !== state.activeCharId);
+    const options = others.map(c =>
+        `<option value="${c.id}">${c.name}</option>`
+    ).join('');
+    const noOthers = others.length === 0;
+
+    return `
+        <div class="draft-panel-header">
+            <span>✍️ Draft Reply as...</span>
+            <button onclick="closeDraftPanel(${idx})" style="background:none;border:none;color:#555;cursor:pointer;font-size:1rem;">✕</button>
+        </div>
+        ${noOthers
+            ? `<p style="font-size:.75rem;color:#555;margin:0 0 6px 0;">No other characters in Cast. Add characters first.</p>`
+            : `<select id="draft-char-${idx}" style="background:#151c33;border:1px solid #2d3f6e;color:#c7d2fe;padding:6px;border-radius:5px;font-size:.8rem;margin-bottom:7px;width:100%;">${options}</select>`
+        }
+        <textarea class="draft-guidance" id="draft-guidance-${idx}"
+            placeholder="Optional: guidance for this specific draft only... e.g. 'James sounds nervous', 'keep it brief', 'he avoids eye contact'"></textarea>
+        <div class="draft-output" id="draft-output-${idx}" style="display:none;"></div>
+        <div class="draft-actions">
+            <button class="btn-draft" onclick="generateDraft(${idx})" ${noOthers ? 'disabled' : ''}>
+                ⚡ Generate Draft
+            </button>
+            <button class="btn-draft btn-draft-send" id="draft-send-${idx}" onclick="sendDraftAsReply(${idx})" style="display:none;">
+                ✅ Send as Reply
+            </button>
+            <button class="btn-draft" id="draft-copy-${idx}" onclick="copyDraft(${idx})" style="display:none;">
+                📋 Copy Draft
+            </button>
+        </div>
+        <p style="font-size:.68rem;color:#3d4f7a;margin:6px 0 0 0;">
+            AI #2 uses your BYOK key from Settings. Full chat history provided for context.
+            Director's Mode and Author's Notes are intentionally excluded.
+        </p>`;
+}
+
+/** Open draft panel, close others */
+function openDraftPanel(idx) {
+    // Check BYOK key first
+    const byok = getBYOK();
+    if (!byok.key) {
+        showToast('Add your API key in Settings → Your Own Key to use Draft Assistant');
+        navTo('settings');
+        return;
+    }
+    // Close any other open panels
+    document.querySelectorAll('.draft-panel').forEach(p => { p.style.display = 'none'; });
+    document.querySelectorAll('.btn-draft-trigger').forEach(b => { b.style.display = 'inline-flex'; });
+
+    const panel   = document.getElementById(`draft-panel-${idx}`);
+    const trigger = document.getElementById(`draft-trigger-${idx}`);
+    if (panel) { panel.style.display = 'block'; }
+    if (trigger) { trigger.style.display = 'none'; }
+}
+
+/** Close a draft panel */
+function closeDraftPanel(idx) {
+    const panel   = document.getElementById(`draft-panel-${idx}`);
+    const trigger = document.getElementById(`draft-trigger-${idx}`);
+    if (panel)   { panel.style.display = 'none'; }
+    if (trigger) { trigger.style.display = 'inline-flex'; }
+}
+
+/** Call /api/draft with BYOK key and get a draft reply */
+async function generateDraft(idx) {
+    const byok = getBYOK();
+    if (!byok.key) { showToast('No BYOK key — add in Settings'); return; }
+
+    const charSelectEl = document.getElementById(`draft-char-${idx}`);
+    if (!charSelectEl) { showToast('No characters available to draft as'); return; }
+
+    const draftCharId = charSelectEl.value;
+    const draftChar   = state.characters.find(c => c.id === draftCharId);
+    if (!draftChar)   { showToast('Character not found'); return; }
+
+    const guidance    = (document.getElementById(`draft-guidance-${idx}`)?.value || '').trim();
+    const outputEl    = document.getElementById(`draft-output-${idx}`);
+    const sendBtn     = document.getElementById(`draft-send-${idx}`);
+    const copyBtn     = document.getElementById(`draft-copy-${idx}`);
+    const genBtn      = document.querySelector(`#draft-panel-${idx} .btn-draft`);
+
+    // Show spinner
+    outputEl.style.display = 'block';
+    outputEl.innerHTML     = '<span class="draft-spinner"></span> Generating draft...';
+    if (genBtn)  { genBtn.disabled = true; }
+    if (sendBtn) { sendBtn.style.display = 'none'; }
+    if (copyBtn) { copyBtn.style.display = 'none'; }
+
+    const msgs = state.chatHistory[state.activeChapterId] || [];
+
+    try {
+        const response = await fetch('/api/draft', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                provider:    byok.provider || 'openrouter',
+                model:       byok.model    || 'z-ai/glm-4.5-air:free',
+                messages:    msgs.map(m => ({ role: m.role, content: m.content })),
+                draftChar:   { name: draftChar.name, desc: draftChar.desc },
+                draftPrompt: guidance,
+                userApiKey:  byok.key
+            })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            const draftText = data.choices[0].message.content;
+            outputEl.innerText     = draftText;
+            outputEl.dataset.draft = draftText;
+            if (sendBtn) { sendBtn.style.display = 'inline-block'; }
+            if (copyBtn) { copyBtn.style.display = 'inline-block'; }
+        } else {
+            outputEl.innerHTML = `<span style="color:var(--danger);">Error: ${data.error}</span>`;
+        }
+    } catch (err) {
+        outputEl.innerHTML = `<span style="color:var(--danger);">Network error: ${err.message}</span>`;
+    } finally {
+        if (genBtn) { genBtn.disabled = false; }
+    }
+}
+
+/** Copy the generated draft to clipboard */
+function copyDraft(idx) {
+    const outputEl = document.getElementById(`draft-output-${idx}`);
+    const text     = outputEl?.dataset.draft || '';
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => showToast('Draft copied to clipboard!'));
+}
+
+/** Send the accepted draft as a user message in the main chat */
+function sendDraftAsReply(idx) {
+    const outputEl = document.getElementById(`draft-output-${idx}`);
+    const text     = outputEl?.dataset.draft || '';
+    if (!text) return;
+
+    // Pre-fill the chat input with the draft so user can review before sending
+    const chatInput = document.getElementById('chat-input');
+    chatInput.value = text;
+    autoResizeTextarea(chatInput);
+    closeDraftPanel(idx);
+    chatInput.focus();
+    showToast('Draft loaded into chat input — review and press Send');
 }
 
 // ─────────────────────────────────────────
@@ -1080,6 +1379,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initChapters();
     applyDirectorUI();
     updateCharBadge();
+    loadBYOK();
     document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
     navTo('chat');
 });
