@@ -292,31 +292,67 @@
             <div style="font-size:.8rem;font-weight:600;color:var(--success);margin-bottom:4px;">🤖 AI #1 — Victoria (Server Key)</div>
             <p style="font-size:.78rem;color:var(--muted);margin:0;">✅ Configured securely on the server. No action needed.</p>
         </div>
-        <!-- AI #2 BYOK Key -->
-        <div style="background:#1a1a2a;padding:10px;border-radius:6px;border:1px solid #2d2d5a;">
-            <div style="font-size:.8rem;font-weight:600;color:#818cf8;margin-bottom:6px;">✍️ AI #2 — Draft Assistant (Your Own Key)</div>
-            <p style="font-size:.75rem;color:var(--muted);margin-bottom:8px;">
-                Stored <strong>locally in your browser only</strong> — never saved to the server.
-                Used exclusively for the Draft Assistant feature.
-            </p>
-            <label style="font-size:.8rem;">Provider for AI #2</label>
-            <select id="byok-provider" onchange="saveBYOK()">
-                <option value="openrouter">OpenRouter</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="openai">OpenAI</option>
-                <option value="mancer">Mancer</option>
-            </select>
-            <label style="font-size:.8rem;">Model for AI #2</label>
-            <input type="text" id="byok-model" placeholder="e.g. z-ai/glm-4.5-air:free" oninput="saveBYOK()">
-            <label style="font-size:.8rem;">Your API Key</label>
-            <div style="position:relative;">
-                <input type="password" id="byok-key" placeholder="Paste your API key here..." oninput="saveBYOK()"
-                    style="padding-right:80px;">
-                <button onclick="toggleBYOKVisibility()" style="position:absolute;right:8px;top:50%;transform:translateY(-65%);background:transparent;border:none;color:var(--muted);font-size:.75rem;cursor:pointer;" id="byok-toggle-vis">Show</button>
+
+        <!-- AI #2 Draft Assistant -->
+        <div style="background:#1a1a2a;padding:12px;border-radius:6px;border:1px solid #2d2d5a;">
+            <div style="font-size:.85rem;font-weight:700;color:#818cf8;margin-bottom:10px;">✍️ AI #2 — Draft Assistant</div>
+
+            <!-- Key Source toggle -->
+            <label style="font-size:.8rem;margin-bottom:8px;">Key Source</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:.85rem;color:var(--primary-text);">
+                    <input type="radio" name="draft-key-source" id="draft-use-server" value="server"
+                        onchange="onDraftKeySourceChange()" style="width:auto;margin:0;accent-color:#818cf8;">
+                    <span>
+                        <strong>Use Server Key</strong>
+                        <span style="display:block;font-size:.72rem;color:var(--muted);">Same API key as AI #1. For testing only — costs come from your server account.</span>
+                    </span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:.85rem;color:var(--primary-text);">
+                    <input type="radio" name="draft-key-source" id="draft-use-byok" value="byok"
+                        onchange="onDraftKeySourceChange()" style="width:auto;margin:0;accent-color:#818cf8;" checked>
+                    <span>
+                        <strong>Use My Own Key (BYOK)</strong>
+                        <span style="display:block;font-size:.72rem;color:var(--muted);">Stored locally in browser only. Never sent to server storage.</span>
+                    </span>
+                </label>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:-8px;">
-                <span id="byok-status" style="font-size:.73rem;color:var(--success);"></span>
-                <button class="btn btn-danger btn-small" onclick="clearBYOK()" style="font-size:.72rem;padding:3px 8px;">Clear Key</button>
+
+            <!-- BYOK fields — hidden when server key selected -->
+            <div id="byok-fields">
+                <label style="font-size:.8rem;">API Provider</label>
+                <select id="byok-provider" onchange="onByokProviderChange()">
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                </select>
+
+                <label style="font-size:.8rem;">Model</label>
+                <input type="text" id="byok-model" placeholder="e.g. z-ai/glm-4.5-air:free" oninput="saveBYOK()">
+                <p style="font-size:.72rem;color:var(--muted);margin-top:-12px;margin-bottom:12px;" id="byok-model-hint">
+                    e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>
+                </p>
+
+                <label style="font-size:.8rem;">Your API Key</label>
+                <div style="position:relative;">
+                    <input type="password" id="byok-key" placeholder="Paste your API key here..."
+                        oninput="saveBYOK()" style="padding-right:56px;margin-bottom:6px;">
+                    <button onclick="toggleBYOKVisibility()"
+                        style="position:absolute;right:8px;top:30%;background:transparent;border:none;color:var(--muted);font-size:.75rem;cursor:pointer;"
+                        id="byok-toggle-vis">Show</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span id="byok-status" style="font-size:.73rem;"></span>
+                    <button class="btn btn-danger btn-small" onclick="clearBYOK()" style="font-size:.72rem;padding:3px 8px;">Clear Key</button>
+                </div>
+            </div>
+
+            <!-- Server key notice — shown when server selected -->
+            <div id="byok-server-notice" style="display:none;background:#1a2a1a;padding:8px 10px;border-radius:5px;border:1px solid #2d5a2d;">
+                <p style="font-size:.75rem;color:var(--success);margin:0;">
+                    ✅ Server key will be used for Draft Assistant.<br>
+                    <span style="color:var(--muted);">⚠️ For testing only — switch to BYOK in production to protect your server costs.</span>
+                </p>
             </div>
         </div>
     </div>
@@ -1056,32 +1092,59 @@ function copyMsg(btn, idx) {
 
 // ─────────────────────────────────────────
 // BYOK — Bring Your Own Key
-// Stored in localStorage under 'rp-byok'
-// Never included in the main state backup
+// Stored separately in localStorage under 'rp-byok'
+// Never included in main state backup
 // ─────────────────────────────────────────
+
+const BYOK_MODEL_HINTS = {
+    openrouter: 'e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>',
+    anthropic:  'e.g. <code>claude-sonnet-4-6</code> or <code>claude-haiku-4-5-20251001</code>',
+    openai:     'e.g. <code>gpt-4o-mini</code> or <code>gpt-3.5-turbo</code>'
+};
+
+const BYOK_MODEL_DEFAULTS = {
+    openrouter: 'z-ai/glm-4.5-air:free',
+    anthropic:  'claude-sonnet-4-6',
+    openai:     'gpt-4o-mini'
+};
+
 function loadBYOK() {
     const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
-    document.getElementById('byok-key').value      = byok.key      || '';
-    document.getElementById('byok-provider').value = byok.provider || 'openrouter';
-    document.getElementById('byok-model').value    = byok.model    || 'z-ai/glm-4.5-air:free';
+
+    // Key source radio
+    const source = byok.keySource || 'byok';
+    const radio  = document.getElementById(source === 'server' ? 'draft-use-server' : 'draft-use-byok');
+    if (radio) radio.checked = true;
+
+    // Provider, model, key
+    const providerEl = document.getElementById('byok-provider');
+    if (providerEl) providerEl.value = byok.provider || 'openrouter';
+    const modelEl = document.getElementById('byok-model');
+    if (modelEl) modelEl.value = byok.model || 'z-ai/glm-4.5-air:free';
+    const keyEl = document.getElementById('byok-key');
+    if (keyEl) keyEl.value = byok.key || '';
+
+    onDraftKeySourceChange();
     updateBYOKStatus();
+    updateByokModelHint();
 }
 
 function saveBYOK() {
-    const byok = {
-        key:      document.getElementById('byok-key').value.trim(),
-        provider: document.getElementById('byok-provider').value,
-        model:    document.getElementById('byok-model').value.trim()
-    };
-    localStorage.setItem('rp-byok', JSON.stringify(byok));
+    const source   = document.querySelector('input[name="draft-key-source"]:checked')?.value || 'byok';
+    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
+    const model    = document.getElementById('byok-model')?.value.trim() || '';
+    const key      = document.getElementById('byok-key')?.value.trim() || '';
+    localStorage.setItem('rp-byok', JSON.stringify({ keySource: source, provider, model, key }));
     updateBYOKStatus();
 }
 
 function clearBYOK() {
     if (!confirm('Clear your stored API key?')) return;
-    localStorage.removeItem('rp-byok');
-    document.getElementById('byok-key').value   = '';
-    document.getElementById('byok-model').value = 'z-ai/glm-4.5-air:free';
+    const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
+    byok.key   = '';
+    localStorage.setItem('rp-byok', JSON.stringify(byok));
+    const keyEl = document.getElementById('byok-key');
+    if (keyEl) keyEl.value = '';
     updateBYOKStatus();
     showToast('BYOK key cleared');
 }
@@ -1089,18 +1152,43 @@ function clearBYOK() {
 function updateBYOKStatus() {
     const byok   = JSON.parse(localStorage.getItem('rp-byok') || '{}');
     const status = document.getElementById('byok-status');
+    if (!status) return;
     if (byok.key) {
-        status.style.color  = 'var(--success)';
-        status.innerText    = `✅ Key saved (${byok.key.substring(0, 8)}...)`;
+        status.style.color = 'var(--success)';
+        status.innerText   = `✅ Key saved (${byok.key.substring(0, 8)}...)`;
     } else {
-        status.style.color  = '#666';
-        status.innerText    = 'No key stored — Draft Assistant disabled';
+        status.style.color = '#666';
+        status.innerText   = 'No key stored';
     }
+}
+
+function onDraftKeySourceChange() {
+    const source       = document.querySelector('input[name="draft-key-source"]:checked')?.value || 'byok';
+    const byokFields   = document.getElementById('byok-fields');
+    const serverNotice = document.getElementById('byok-server-notice');
+    if (byokFields)   byokFields.style.display   = source === 'byok'   ? 'block' : 'none';
+    if (serverNotice) serverNotice.style.display  = source === 'server' ? 'block' : 'none';
+    saveBYOK();
+}
+
+function onByokProviderChange() {
+    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
+    const modelEl  = document.getElementById('byok-model');
+    if (modelEl) modelEl.value = BYOK_MODEL_DEFAULTS[provider] || '';
+    updateByokModelHint();
+    saveBYOK();
+}
+
+function updateByokModelHint() {
+    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
+    const hint     = document.getElementById('byok-model-hint');
+    if (hint) hint.innerHTML = BYOK_MODEL_HINTS[provider] || '';
 }
 
 function toggleBYOKVisibility() {
     const input = document.getElementById('byok-key');
     const btn   = document.getElementById('byok-toggle-vis');
+    if (!input || !btn) return;
     if (input.type === 'password') { input.type = 'text';     btn.innerText = 'Hide'; }
     else                           { input.type = 'password'; btn.innerText = 'Show'; }
 }
@@ -1154,35 +1242,36 @@ function buildDraftPanelHTML(idx) {
 
 /** Open draft panel, close others */
 function openDraftPanel(idx) {
-    // Check BYOK key first
-    const byok = getBYOK();
-    if (!byok.key) {
-        showToast('Add your API key in Settings → Your Own Key to use Draft Assistant');
+    const byok   = getBYOK();
+    const source = byok.keySource || 'byok';
+
+    // If BYOK mode but no key, redirect to settings
+    if (source === 'byok' && !byok.key) {
+        showToast('Add your API key in Settings → Draft Assistant to use this feature');
         navTo('settings');
         return;
     }
+
     // Close any other open panels
     document.querySelectorAll('.draft-panel').forEach(p => { p.style.display = 'none'; });
     document.querySelectorAll('.btn-draft-trigger').forEach(b => { b.style.display = 'inline-flex'; });
 
     const panel   = document.getElementById(`draft-panel-${idx}`);
     const trigger = document.getElementById(`draft-trigger-${idx}`);
-    if (panel) { panel.style.display = 'block'; }
+    if (panel)   { panel.style.display = 'block'; }
     if (trigger) { trigger.style.display = 'none'; }
 }
 
-/** Close a draft panel */
-function closeDraftPanel(idx) {
-    const panel   = document.getElementById(`draft-panel-${idx}`);
-    const trigger = document.getElementById(`draft-trigger-${idx}`);
-    if (panel)   { panel.style.display = 'none'; }
-    if (trigger) { trigger.style.display = 'inline-flex'; }
-}
-
-/** Call /api/draft with BYOK key and get a draft reply */
+/** Call /api/draft — uses BYOK key or null (server key) depending on user setting */
 async function generateDraft(idx) {
-    const byok = getBYOK();
-    if (!byok.key) { showToast('No BYOK key — add in Settings'); return; }
+    const byok       = getBYOK();
+    const source     = byok.keySource || 'byok';
+    const userApiKey = source === 'server' ? null : (byok.key || null);
+
+    if (source === 'byok' && !userApiKey) {
+        showToast('No BYOK key — add in Settings → Draft Assistant');
+        return;
+    }
 
     const charSelectEl = document.getElementById(`draft-char-${idx}`);
     if (!charSelectEl) { showToast('No characters available to draft as'); return; }
@@ -1191,38 +1280,39 @@ async function generateDraft(idx) {
     const draftChar   = state.characters.find(c => c.id === draftCharId);
     if (!draftChar)   { showToast('Character not found'); return; }
 
-    const guidance    = (document.getElementById(`draft-guidance-${idx}`)?.value || '').trim();
-    const outputEl    = document.getElementById(`draft-output-${idx}`);
-    const sendBtn     = document.getElementById(`draft-send-${idx}`);
-    const copyBtn     = document.getElementById(`draft-copy-${idx}`);
-    const genBtn      = document.querySelector(`#draft-panel-${idx} .btn-draft`);
+    const guidance = (document.getElementById(`draft-guidance-${idx}`)?.value || '').trim();
+    const outputEl = document.getElementById(`draft-output-${idx}`);
+    const sendBtn  = document.getElementById(`draft-send-${idx}`);
+    const copyBtn  = document.getElementById(`draft-copy-${idx}`);
+    const genBtn   = document.querySelector(`#draft-panel-${idx} .btn-draft`);
 
-    // Show spinner
     outputEl.style.display = 'block';
     outputEl.innerHTML     = '<span class="draft-spinner"></span> Generating draft...';
     if (genBtn)  { genBtn.disabled = true; }
     if (sendBtn) { sendBtn.style.display = 'none'; }
     if (copyBtn) { copyBtn.style.display = 'none'; }
 
-    const msgs = state.chatHistory[state.activeChapterId] || [];
+    const msgs      = state.chatHistory[state.activeChapterId] || [];
+    const provider  = source === 'server' ? state.provider : (byok.provider || 'openrouter');
+    const model     = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
 
     try {
         const response = await fetch('/api/draft', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                provider:    byok.provider || 'openrouter',
-                model:       byok.model    || 'z-ai/glm-4.5-air:free',
+                provider,
+                model,
                 messages:    msgs.map(m => ({ role: m.role, content: m.content })),
                 draftChar:   { name: draftChar.name, desc: draftChar.desc },
                 draftPrompt: guidance,
-                userApiKey:  byok.key
+                userApiKey   // null = use server key, string = use BYOK
             })
         });
         const data = await response.json();
 
         if (response.ok) {
-            const draftText = data.choices[0].message.content;
+            const draftText        = data.choices[0].message.content;
             outputEl.innerText     = draftText;
             outputEl.dataset.draft = draftText;
             if (sendBtn) { sendBtn.style.display = 'inline-block'; }

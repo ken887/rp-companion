@@ -167,11 +167,13 @@ app.post('/api/draft', async (req, res) => {
     const { provider, model, messages, draftChar, draftPrompt, userApiKey } = req.body;
     console.log('Provider:', provider, '| Model:', model, '| Draft char:', draftChar?.name);
 
-    // BYOK key is required for Draft Assistant
-    if (!userApiKey || userApiKey.trim() === '') {
-      return res.status(401).json({
-        error: 'No BYOK API key provided. Please add your own API key in Settings → Your API Key to use the Draft Assistant.'
-      });
+    // userApiKey null = use server key (testing mode)
+    // userApiKey string = use BYOK key
+    const usingServerKey = !userApiKey || userApiKey.trim() === '';
+    if (usingServerKey) {
+      console.log('Draft: using server key (testing mode)');
+    } else {
+      console.log('Draft: using BYOK key');
     }
 
     if (!messages || messages.length === 0)
@@ -207,7 +209,7 @@ ${draftPrompt}` : ''}`;
     ];
 
     const { apiUrl, headers, body } = buildProviderConfig(
-      provider, model, draftMessages, userApiKey.trim()
+      provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
     console.log('Calling Draft API:', apiUrl);
