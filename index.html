@@ -563,7 +563,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.0 loaded');
+console.log('RP Companion v1.2.2 loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -583,8 +583,19 @@ Current Chapter Context:
 {{director}}`,
     bibleToggle:          true,
     contextWindow:        15,
-    characters:           [],
-    activeCharId:         null,
+    characters: [
+        {
+            id:   'default-victoria',
+            name: 'Victoria',
+            desc: 'The main character. Elegant, intelligent, and guarded. She chooses her words carefully and rarely reveals what she truly feels.'
+        },
+        {
+            id:   'default-james',
+            name: 'James',
+            desc: "Victoria's counterpart. Perceptive and persistent, he has a way of asking the questions others avoid."
+        }
+    ],
+    activeCharId:         'default-victoria',
     chapters:             [],
     activeChapterId:      null,
     chatHistory:          {},
