@@ -1,5 +1,5 @@
 // server.js - Railway Backend
-// v1.2.2 — BYOK support + Draft Assistant endpoint
+// v1.2.2e — BYOK support + Draft Assistant endpoint errorusing anthropics and chain of thoughts of glm-4.7 issues
 
 const express = require('express');
 const cors    = require('cors');
@@ -146,75 +146,98 @@ app.post('/api/chat', async (req, res) => {
 
 // ─────────────────────────────────────────
 // POST /api/draft  — AI #2 (Draft Assistant)
-// Uses the user's own BYOK API key stored in localStorage
-// and sent from the frontend in the request body.
-// Server env key is intentionally NOT used here —
-// Draft Assistant costs are on the user's own account.
 //
-// Request body:
-// {
-//   provider:     string   — provider for AI #2
-//   model:        string   — model for AI #2
-//   messages:     array    — full chat history for context
-//   draftChar:    object   — { name, desc } of character to draft as
-//   draftPrompt:  string   — optional extra guidance for this draft
-//   userApiKey:   string   — BYOK key from localStorage (required)
-// }
+// Fixes applied:
+// 1. Thinking/reasoning suppressed for GLM models (enable_thinking: false)
+// 2. Role confusion fixed — history presented as a screenplay, not chat roles
+// 3. Anthropic compatible — system prompt separated correctly
+// 4. Works with server key (null) or BYOK key (string)
 // ─────────────────────────────────────────
 app.post('/api/draft', async (req, res) => {
   console.log('=== /api/draft ===');
   try {
-    const { provider, model, messages, draftChar, draftPrompt, userApiKey } = req.body;
-    console.log('Provider:', provider, '| Model:', model, '| Draft char:', draftChar?.name);
+    const { provider, model, messages, draftChar, draftPrompt, userApiKey, activeCharName } = req.body;
+    console.log('Provider:', provider, '| Model:', model, '| Draft char:', draftChar?.name, '| Active char:', activeCharName);
 
-    // userApiKey null = use server key (testing mode)
-    // userApiKey string = use BYOK key
     const usingServerKey = !userApiKey || userApiKey.trim() === '';
-    if (usingServerKey) {
-      console.log('Draft: using server key (testing mode)');
-    } else {
-      console.log('Draft: using BYOK key');
-    }
+    console.log('Draft key mode:', usingServerKey ? 'server key' : 'BYOK');
 
     if (!messages || messages.length === 0)
       return res.status(400).json({ error: 'No messages provided' });
-
     if (!draftChar || !draftChar.name)
       return res.status(400).json({ error: 'No draft character provided' });
 
-    // Build Draft Assistant system prompt
-    // Deliberately excludes Director's Mode and Author's Notes — see design spec
-    const draftSystemPrompt =
-`You are a creative writing assistant helping to draft a reply for the character ${draftChar.name}.
+    const aiCharName = activeCharName || 'the main character';
+    const draftName  = draftChar.name;
 
-CHARACTER PROFILE:
-${draftChar.name}: ${draftChar.desc}
+    // ── SYSTEM PROMPT ──
+    // Framed as a screenplay task — much clearer than chat-role instructions
+    const draftSystemPrompt =
+`You are a screenwriter's assistant helping draft dialogue and action for a roleplay scene.
 
 YOUR TASK:
-- Read the conversation history below carefully for full context
-- Write a natural, in-character reply as ${draftChar.name}
-- Match the tone, pace, and emotional register of the scene
-- This is a DRAFT — write it thoughtfully but the user will review and edit it
-- Do NOT add any preamble, explanation, or meta-commentary
-- Reply ONLY with ${draftChar.name}'s dialogue/response${draftPrompt ? `
+Write the next line(s) for the character "${draftName}" only.
 
-ADDITIONAL GUIDANCE FOR THIS DRAFT:
+CHARACTER PROFILE — ${draftName}:
+${draftChar.desc}
+
+THE SCENE SO FAR:
+Below is the conversation transcript. ${aiCharName} and ${draftName} are the two characters.
+Read it carefully to understand tone, tension, and pacing.
+Your job is to write what ${draftName} says or does NEXT — responding to ${aiCharName}'s most recent line.
+
+STRICT RULES:
+- Write ONLY as ${draftName}
+- Do NOT write as ${aiCharName}
+- Do NOT repeat, echo, or extend ${aiCharName}'s last line
+- Do NOT include any preamble, explanation, reasoning, or meta-commentary
+- Do NOT think out loud — output ONLY ${draftName}'s reply, nothing else
+- Start your output directly with ${draftName}'s words or action${draftPrompt ? `
+
+DIRECTION FOR THIS DRAFT:
 ${draftPrompt}` : ''}`;
 
-    // Build messages for AI #2
-    // System prompt + full chat history for context
-    const draftMessages = [
-      { role: 'system', content: draftSystemPrompt },
-      ...messages.map(m => ({ role: m.role, content: m.content }))
-    ];
+    // ── HISTORY — presented as a labelled screenplay transcript ──
+    // All turns become a single readable block rather than chat roles.
+    // This avoids role confusion entirely — the AI sees a script, not a chat.
+    const transcript = messages.map(m => {
+      const speaker = m.role === 'assistant' ? aiCharName : draftName;
+      return `${speaker}:\n${m.content}`;
+    }).join('\n\n');
 
+    // ── BUILD MESSAGES FOR PROVIDER ──
+    // For Anthropic: system is separate, transcript goes in user turn
+    // For others: system in messages array as role:system
+    let draftMessages;
+
+    if (provider === 'anthropic') {
+      // Anthropic handles system separately via buildProviderConfig
+      draftMessages = [
+        { role: 'system', content: draftSystemPrompt },
+        { role: 'user',   content: `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\nNow write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.` }
+      ];
+    } else {
+      draftMessages = [
+        { role: 'system', content: draftSystemPrompt },
+        { role: 'user',   content: `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\nNow write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.` }
+      ];
+    }
+
+    // ── BUILD PROVIDER CONFIG ──
     const { apiUrl, headers, body } = buildProviderConfig(
       provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
+    // ── SUPPRESS THINKING for GLM/Mancer models ──
+    // Prevents reasoning_content from leaking into the draft output
+    if (model.toLowerCase().includes('glm') || provider === 'mancer') {
+      body.enable_thinking = false;
+      console.log('Draft: thinking suppressed for GLM/Mancer model');
+    }
+
     console.log('Calling Draft API:', apiUrl);
     const { finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body);
-    console.log('✅ Draft success:', finalText.substring(0, 100));
+    console.log('✅ Draft success:', finalText.substring(0, 120));
 
     res.json({
       choices: [{ message: { role: 'assistant', content: finalText, reasoning_content: reasoningContent } }]
