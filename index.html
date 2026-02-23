@@ -290,7 +290,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2c — BYOK + Draft Assistant)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2g — BYOK + Draft Assistant)</span></h2>
 
     <div class="setting-group">
         <label>API Provider</label>
@@ -619,7 +619,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2c loaded');
+console.log('RP Companion v1.2.2g loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -1255,8 +1255,8 @@ function buildDraftPanelHTML(idx) {
             </button>
         </div>
         <p style="font-size:.68rem;color:#3d4f7a;margin:6px 0 0 0;">
-            AI #2 uses your BYOK key from Settings. Full chat history provided for context.
-            Director's Mode and Author's Notes are intentionally excluded.
+            AI #2 drafts as the selected character using full chat history for context.
+            Director's Mode and Author's Notes are excluded by design.
         </p>`;
 }
 
@@ -1317,23 +1317,28 @@ async function generateDraft(idx) {
     const model     = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
 
     try {
+        const activeChar = state.characters.find(c => c.id === state.activeCharId);
         const response = await fetch('/api/draft', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 provider,
                 model,
-                messages:    msgs.map(m => ({ role: m.role, content: m.content })),
-                draftChar:   { name: draftChar.name, desc: draftChar.desc },
-                draftPrompt: guidance,
-                userApiKey   // null = use server key, string = use BYOK
+                messages:       msgs.map(m => ({ role: m.role, content: m.content })),
+                draftChar:      { name: draftChar.name, desc: draftChar.desc },
+                draftPrompt:    guidance,
+                userApiKey,     // null = use server key, string = use BYOK
+                activeCharName: activeChar ? activeChar.name : 'the main character'
             })
         });
         const data = await response.json();
 
         if (response.ok) {
-            const draftText        = data.choices[0].message.content;
-            outputEl.innerText     = draftText;
+            const draftText = data.choices[0].message.content;
+            // Bug fix: clear innerHTML first before setting innerText
+            // to prevent duplication from leftover spinner HTML
+            outputEl.innerHTML    = '';
+            outputEl.innerText    = draftText;
             outputEl.dataset.draft = draftText;
             if (sendBtn) { sendBtn.style.display = 'inline-block'; }
             if (copyBtn) { copyBtn.style.display = 'inline-block'; }
@@ -1361,13 +1366,27 @@ function sendDraftAsReply(idx) {
     const text     = outputEl?.dataset.draft || '';
     if (!text) return;
 
-    // Pre-fill the chat input with the draft so user can review before sending
-    const chatInput = document.getElementById('chat-input');
-    chatInput.value = text;
+    // Bug fix: explicitly clear the input first, then set value
+    // prevents any existing content being appended to the draft
+    const chatInput   = document.getElementById('chat-input');
+    chatInput.value   = '';
+    chatInput.value   = text.trim();
     autoResizeTextarea(chatInput);
     closeDraftPanel(idx);
+
+    // Clear the draft panel output so it's fresh next time
+    if (outputEl) {
+        outputEl.innerHTML     = '';
+        outputEl.dataset.draft = '';
+        outputEl.style.display = 'none';
+    }
+    const sendBtn = document.getElementById(`draft-send-${idx}`);
+    const copyBtn = document.getElementById(`draft-copy-${idx}`);
+    if (sendBtn) sendBtn.style.display = 'none';
+    if (copyBtn) copyBtn.style.display = 'none';
+
     chatInput.focus();
-    showToast('Draft loaded into chat input — review and press Send');
+    showToast('Draft loaded — review then press Send');
 }
 
 // ─────────────────────────────────────────
