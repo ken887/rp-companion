@@ -1,5 +1,5 @@
 // server.js - Railway Backend
-// v1.2.2g — BYOK support + Draft Assistant endpoint using claude
+// v1.2.2j — Bug fixes: Draft AI voice, Anthropic compat, GLM thinking, Android PWA, Railway JSON errors
 
 const express = require('express');
 const cors    = require('cors');
@@ -11,11 +11,43 @@ const PORT = process.env.PORT || 3000;
 // ─────────────────────────────────────────
 // MIDDLEWARE
 // ─────────────────────────────────────────
+//app.use(cors()); repalced as below
+//app.use(express.json({ limit: '10mb' })); repalced as below
+// app.use(express.static(path.join(__dirname))); repalced as below
+
+
+
 app.use(cors());
-app.use(express.json());
-app.use(express.static('.'));
+
+// This helps you see exactly how big the request is in your Railway logs
+app.use((req, res, next) => {
+  const size = req.headers['content-length'];
+  if (size && size > 1024 * 1024) { // Only log if > 1MB
+    console.log(`📦 Incoming Request Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+  }
+  next();
+});
+
+// Increased limits to 50MB to handle Base64 image bloat
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.use(express.static(path.join(__dirname)));
+
+
+
+
 
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── Catch-all: return index.html for any unknown GET route ──
+// Prevents Railway's proxy from returning its own HTML 404 page,
+// which breaks JSON parsing on the frontend ("DOCTYPE is not valid JSON")
+app.get('*', (req, res, next) => {
+  // Only catch non-API routes — let API errors fall through to error handler
+  if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -112,7 +144,7 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
       sanitised.push({ role: 'user', content: 'Begin.' });
     }
 
-    body = { model, max_tokens: 1024, system: systemMsg, messages: sanitised };
+    body = { model, max_tokens: 4096, system: systemMsg, messages: sanitised };
 
   } else {
     throw new Error('Unknown provider: ' + provider);
@@ -129,10 +161,24 @@ async function callApi(provider, apiUrl, headers, body) {
   const responseData = await response.json();
 
   if (!response.ok) {
-    const errMsg = responseData.error?.message
+    // Log full response for debugging
+    console.error('API error response:', JSON.stringify(responseData, null, 2));
+
+    // OpenRouter wraps errors differently — try multiple paths
+    const errMsg =
+      responseData.error?.message                                          // standard
+      || responseData.error?.metadata?.raw                                 // OpenRouter raw upstream error
       || (typeof responseData.error === 'string' ? responseData.error : null)
       || responseData.message
-      || 'API request failed';
+      || `HTTP ${response.status} — API request failed`;
+
+    // Add helpful context for common errors
+    if (response.status === 429) throw new Error('Rate limit reached — wait a moment and try again');
+    if (response.status === 402) throw new Error('Insufficient credits on your API account');
+    if (response.status === 413 || errMsg.toLowerCase().includes('context') || errMsg.toLowerCase().includes('token')) {
+      throw new Error('Chat history too long for this model. Reduce Context Window in Settings, or clear chat history.');
+    }
+
     throw new Error(errMsg);
   }
 
@@ -264,9 +310,9 @@ ${draftPrompt}` : ''}`;
       provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
-    // ── ANTHROPIC: bump max_tokens for draft responses ──
+    // ── ANTHROPIC: bump max_tokens for richer draft responses ──
     if (provider === 'anthropic') {
-      body.max_tokens = 2048;
+      body.max_tokens = 4096;
     }
 
     // ── SUPPRESS THINKING for Mancer/GLM models ──
@@ -300,13 +346,27 @@ ${draftPrompt}` : ''}`;
 });
 
 // ─────────────────────────────────────────
+// GLOBAL ERROR HANDLER
+// Ensures ALL errors from API routes return JSON, never HTML.
+// Without this, Express default error handler returns HTML which
+// causes "DOCTYPE is not valid JSON" on the frontend.
+// ─────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled error:', err.message);
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+  next(err);
+});
+
+// ─────────────────────────────────────────
 // START
 // ─────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 RP Companion server v1.2.2 running on port ${PORT}`);
+  console.log(`🚀 RP Companion server v1.2.2j running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log('');
   console.log('Endpoints:');
-  console.log('  POST /api/chat  — AI #1 Victoria (server key)');
+  console.log('  POST /api/chat  — AI #1 (server key)');
   console.log('  POST /api/draft — AI #2 Draft Assistant (BYOK key)');
 });
