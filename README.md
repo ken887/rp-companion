@@ -1,5 +1,5 @@
 # RP Companion - Railway Deployment
-version 1.1.1 amended for other API provider 
+version v1.2.2i make button add character visble in PWA
 
 ## 🚀 Quick Deploy to Railway (No CLI Needed!)
 
