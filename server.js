@@ -1,5 +1,13 @@
 // server.js - Railway Backend
-// v1.2.2j — Bug fixes: Draft AI voice, Anthropic compat, GLM thinking, Android PWA, Railway JSON errors
+// ─────────────────────────────────────────
+// REVISION HISTORY
+// v1.2.2k — Payload size guard on /api/chat and /api/draft (4mb hard limit)
+//            Logging middleware for large requests (>1mb logged to Railway)
+//            express.json limit raised to 50mb (handles long sessions)
+//            express.urlencoded limit added (50mb, extended)
+//            [from v1.2.2j] Draft AI voice fix, Anthropic compat, GLM thinking
+//            suppression, Android PWA fixes, Railway JSON error fix
+// ─────────────────────────────────────────
 
 const express = require('express');
 const cors    = require('cors');
@@ -11,32 +19,23 @@ const PORT = process.env.PORT || 3000;
 // ─────────────────────────────────────────
 // MIDDLEWARE
 // ─────────────────────────────────────────
-//app.use(cors()); repalced as below
-//app.use(express.json({ limit: '10mb' })); repalced as below
-// app.use(express.static(path.join(__dirname))); repalced as below
-
-
-
 app.use(cors());
 
-// This helps you see exactly how big the request is in your Railway logs
+// ── v1.2.2k: Log incoming request size to Railway logs for diagnostics ──
+// Only logs if payload exceeds 1MB — keeps logs clean during normal use
 app.use((req, res, next) => {
   const size = req.headers['content-length'];
-  if (size && size > 1024 * 1024) { // Only log if > 1MB
-    console.log(`📦 Incoming Request Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
+  if (size && size > 1024 * 1024) {
+    console.log(`📦 Large request: ${(size / 1024 / 1024).toFixed(2)} MB — ${req.method} ${req.path}`);
   }
   next();
 });
 
-// Increased limits to 50MB to handle Base64 image bloat
+// ── v1.2.2k: Raised to 50mb to accommodate long chat sessions ──
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(express.static(path.join(__dirname)));
-
-
-
-
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -46,16 +45,12 @@ app.get('/', (req, res) => {
 // Prevents Railway's proxy from returning its own HTML 404 page,
 // which breaks JSON parsing on the frontend ("DOCTYPE is not valid JSON")
 app.get('*', (req, res, next) => {
-  // Only catch non-API routes — let API errors fall through to error handler
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ─────────────────────────────────────────
 // HELPER — Build provider config
-// Accepts an optional userApiKey (BYOK).
-// If provided, it takes priority over the server env var.
-// Used by both /api/chat and /api/draft endpoints.
 // ─────────────────────────────────────────
 function buildProviderConfig(provider, model, messages, userApiKey = null) {
   let apiUrl  = '';
@@ -66,10 +61,8 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
   if (provider === 'mancer') {
     apiUrl = 'https://neuro.mancer.tech/oai/v1/chat/completions';
     const API_KEY = userApiKey || process.env.MANCER_API_KEY;
-    if (!API_KEY) throw new Error('Mancer API Key not configured. Add MANCER_API_KEY to Railway env vars or provide your own key.');
+    if (!API_KEY) throw new Error('Mancer API Key not configured. Add MANCER_API_KEY to Railway env vars.');
     headers['X-API-KEY'] = API_KEY;
-    // Dual thinking suppression for Mancer/GLM:
-    // enable_thinking:false (param) + /nothink appended to last user message
     const mancerMessages = [...messages];
     const lastUserIdx = [...mancerMessages].reverse().findIndex(m => m.role === 'user');
     if (lastUserIdx !== -1) {
@@ -91,7 +84,7 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
   } else if (provider === 'openrouter') {
     apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
     const API_KEY = userApiKey || process.env.OPENROUTER_API_KEY;
-    if (!API_KEY) throw new Error('OpenRouter API Key not configured. Add OPENROUTER_API_KEY to Railway env vars or provide your own key.');
+    if (!API_KEY) throw new Error('OpenRouter API Key not configured. Add OPENROUTER_API_KEY to Railway env vars.');
     headers['Authorization'] = `Bearer ${API_KEY}`;
     headers['HTTP-Referer']  = 'https://rp-companion.up.railway.app';
     headers['X-Title']       = 'RP Companion';
@@ -101,7 +94,7 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
   } else if (provider === 'openai') {
     apiUrl = 'https://api.openai.com/v1/chat/completions';
     const API_KEY = userApiKey || process.env.OPENAI_API_KEY;
-    if (!API_KEY) throw new Error('OpenAI API Key not configured. Add OPENAI_API_KEY to Railway env vars or provide your own key.');
+    if (!API_KEY) throw new Error('OpenAI API Key not configured. Add OPENAI_API_KEY to Railway env vars.');
     headers['Authorization'] = `Bearer ${API_KEY}`;
     body = { model, messages, max_tokens: 1024 };
 
@@ -109,37 +102,29 @@ function buildProviderConfig(provider, model, messages, userApiKey = null) {
   } else if (provider === 'anthropic') {
     apiUrl = 'https://api.anthropic.com/v1/messages';
     const API_KEY = userApiKey || process.env.ANTHROPIC_API_KEY;
-    if (!API_KEY) throw new Error('Anthropic API Key not configured. Add ANTHROPIC_API_KEY to Railway env vars or provide your own key.');
+    if (!API_KEY) throw new Error('Anthropic API Key not configured. Add ANTHROPIC_API_KEY to Railway env vars.');
     headers['x-api-key']         = API_KEY;
     headers['anthropic-version'] = '2023-06-01';
 
-    // Extract system message
     let systemMsg = '';
     let apiMsgs   = messages.filter(m => {
       if (m.role === 'system') { systemMsg = m.content; return false; }
       return true;
     });
 
-    // Anthropic requires strict user/assistant alternation.
-    // Sanitise: merge consecutive same-role messages into one.
     const sanitised = [];
     for (const msg of apiMsgs) {
       const prev = sanitised[sanitised.length - 1];
       if (prev && prev.role === msg.role) {
-        // Merge into previous message
         prev.content += '\n\n' + msg.content;
       } else {
         sanitised.push({ role: msg.role, content: msg.content });
       }
     }
 
-    // Anthropic also requires the conversation to END with a user message
-    // If last message is assistant, append a minimal user continuation prompt
     if (sanitised.length > 0 && sanitised[sanitised.length - 1].role === 'assistant') {
       sanitised.push({ role: 'user', content: 'Please continue.' });
     }
-
-    // Must have at least one user message
     if (sanitised.length === 0) {
       sanitised.push({ role: 'user', content: 'Begin.' });
     }
@@ -161,18 +146,15 @@ async function callApi(provider, apiUrl, headers, body) {
   const responseData = await response.json();
 
   if (!response.ok) {
-    // Log full response for debugging
     console.error('API error response:', JSON.stringify(responseData, null, 2));
 
-    // OpenRouter wraps errors differently — try multiple paths
     const errMsg =
-      responseData.error?.message                                          // standard
-      || responseData.error?.metadata?.raw                                 // OpenRouter raw upstream error
+      responseData.error?.message
+      || responseData.error?.metadata?.raw
       || (typeof responseData.error === 'string' ? responseData.error : null)
       || responseData.message
       || `HTTP ${response.status} — API request failed`;
 
-    // Add helpful context for common errors
     if (response.status === 429) throw new Error('Rate limit reached — wait a moment and try again');
     if (response.status === 402) throw new Error('Insufficient credits on your API account');
     if (response.status === 413 || errMsg.toLowerCase().includes('context') || errMsg.toLowerCase().includes('token')) {
@@ -182,7 +164,7 @@ async function callApi(provider, apiUrl, headers, body) {
     throw new Error(errMsg);
   }
 
-  let finalText      = '';
+  let finalText        = '';
   let reasoningContent = null;
 
   if (provider === 'anthropic') {
@@ -202,9 +184,8 @@ async function callApi(provider, apiUrl, headers, body) {
 }
 
 // ─────────────────────────────────────────
-// POST /api/chat  — AI #1 (Victoria / main character)
+// POST /api/chat  — AI #1 (main character)
 // Uses server-side API key only.
-// BYOK key is NOT used here — server key is protected for AI #1.
 // ─────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
   console.log('=== /api/chat ===');
@@ -215,8 +196,16 @@ app.post('/api/chat', async (req, res) => {
     if (!messages || messages.length === 0)
       return res.status(400).json({ error: 'No messages provided' });
 
+    // ── v1.2.2k: Payload size guard ──
+    const payloadSize = JSON.stringify(req.body).length;
+    console.log(`📊 /api/chat payload: ${(payloadSize / 1024).toFixed(1)} KB`);
+    if (payloadSize > 4 * 1024 * 1024) {
+      return res.status(413).json({
+        error: 'Chat history too large. Reduce Context Window in Settings or clear old messages.'
+      });
+    }
+
     const { apiUrl, headers, body } = buildProviderConfig(provider, model, messages, null);
-    // null = always use server key for AI #1
 
     console.log('Calling:', apiUrl);
     const { finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body);
@@ -234,12 +223,6 @@ app.post('/api/chat', async (req, res) => {
 
 // ─────────────────────────────────────────
 // POST /api/draft  — AI #2 (Draft Assistant)
-//
-// Fixes applied:
-// 1. Thinking/reasoning suppressed for GLM models (enable_thinking: false)
-// 2. Role confusion fixed — history presented as a screenplay, not chat roles
-// 3. Anthropic compatible — system prompt separated correctly
-// 4. Works with server key (null) or BYOK key (string)
 // ─────────────────────────────────────────
 app.post('/api/draft', async (req, res) => {
   console.log('=== /api/draft ===');
@@ -255,11 +238,18 @@ app.post('/api/draft', async (req, res) => {
     if (!draftChar || !draftChar.name)
       return res.status(400).json({ error: 'No draft character provided' });
 
+    // ── v1.2.2k: Payload size guard ──
+    const payloadSize = JSON.stringify(req.body).length;
+    console.log(`📊 /api/draft payload: ${(payloadSize / 1024).toFixed(1)} KB`);
+    if (payloadSize > 4 * 1024 * 1024) {
+      return res.status(413).json({
+        error: 'Chat history too large for draft. Reduce Context Window in Settings or clear old messages.'
+      });
+    }
+
     const aiCharName = activeCharName || 'the main character';
     const draftName  = draftChar.name;
 
-    // ── SYSTEM PROMPT ──
-    // Framed as a screenplay task — much clearer than chat-role instructions
     const draftSystemPrompt =
 `You are a screenwriter's assistant helping draft dialogue and action for a roleplay scene.
 
@@ -285,17 +275,11 @@ STRICT RULES:
 DIRECTION FOR THIS DRAFT:
 ${draftPrompt}` : ''}`;
 
-    // ── HISTORY — presented as a labelled screenplay transcript ──
-    // All turns become a single readable block rather than chat roles.
-    // This avoids role confusion entirely — the AI sees a script, not a chat.
     const transcript = messages.map(m => {
       const speaker = m.role === 'assistant' ? aiCharName : draftName;
       return `${speaker}:\n${m.content}`;
     }).join('\n\n');
 
-    // ── BUILD MESSAGES FOR PROVIDER ──
-    // Single user message containing the full labelled transcript.
-    // buildProviderConfig handles Anthropic's system/messages separation automatically.
     const transcriptUserMsg =
       `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\n` +
       `Now write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.`;
@@ -305,23 +289,16 @@ ${draftPrompt}` : ''}`;
       { role: 'user',   content: transcriptUserMsg }
     ];
 
-    // ── BUILD PROVIDER CONFIG ──
     const { apiUrl, headers, body } = buildProviderConfig(
       provider, model, draftMessages, usingServerKey ? null : userApiKey.trim()
     );
 
-    // ── ANTHROPIC: bump max_tokens for richer draft responses ──
     if (provider === 'anthropic') {
       body.max_tokens = 4096;
     }
 
-    // ── SUPPRESS THINKING for Mancer/GLM models ──
-    // Dual approach for maximum reliability:
-    // 1. enable_thinking: false — request param supported by Mancer
-    // 2. /nothink appended to user message — Mancer's most reliable fallback
     if (provider === 'mancer' || model.toLowerCase().includes('glm')) {
       body.enable_thinking = false;
-      // Append /nothink to the last user message in body.messages
       if (Array.isArray(body.messages)) {
         const lastMsg = body.messages[body.messages.length - 1];
         if (lastMsg && lastMsg.role === 'user') {
@@ -348,8 +325,6 @@ ${draftPrompt}` : ''}`;
 // ─────────────────────────────────────────
 // GLOBAL ERROR HANDLER
 // Ensures ALL errors from API routes return JSON, never HTML.
-// Without this, Express default error handler returns HTML which
-// causes "DOCTYPE is not valid JSON" on the frontend.
 // ─────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled error:', err.message);
@@ -363,7 +338,7 @@ app.use((err, req, res, next) => {
 // START
 // ─────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 RP Companion server v1.2.2j running on port ${PORT}`);
+  console.log(`🚀 RP Companion server v1.2.2k running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log('');
   console.log('Endpoints:');
