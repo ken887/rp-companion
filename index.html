@@ -304,7 +304,21 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2g — chat input box resize )</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2l)</span></h2>
+
+    <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
+    <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:.95rem;font-weight:700;color:var(--primary);margin-bottom:6px;">👋 Welcome to RP Companion!</div>
+        <p style="font-size:.82rem;color:var(--muted);margin:0 0 10px 0;">
+            To get started, choose your <strong style="color:white;">API Provider</strong> and enter your <strong style="color:white;">Model Name</strong> below.
+            Your settings are saved automatically.
+        </p>
+        <p style="font-size:.78rem;color:#555;margin:0;">
+            💡 Don't have an API key yet? Sign up free at
+            <strong style="color:var(--muted);">openrouter.ai</strong> and use model
+            <code>z-ai/glm-4.5-air:free</code> to get started at no cost.
+        </p>
+    </div>
 
     <div class="setting-group">
         <label>API Provider</label>
@@ -462,8 +476,8 @@
      CHARACTERS
 ══════════════════════════════ -->
 <main id="view-characters" class="view">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-        <h2>Characters</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:10;">
+        <h2 style="margin:0;">Cast</h2>
         <button class="btn btn-small" onclick="openCharModal()">+ Add New</button>
     </div>
     <div id="character-list"></div>
@@ -633,22 +647,49 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2h loaded');
+console.log('RP Companion v1.2.2l loaded');
 
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 const defaultState = {
-    provider:             'openrouter',
-    model:                'z-ai/glm-4.5-air:free',
+    provider:             '',
+    model:                '',
     bible:                '',
     systemTemplate:
-`You are {{char}}.
+`ROLEPLAY IDENTITY: {{char}}
+You are {{char}}. Every response must be written exclusively from her perspective, reflecting the personality, history, and psychological depth found in the Story Bible below. Use the Chapter Summary to maintain continuity regarding the current plot and emotional state.
 
+STORY BIBLE:
 {{bible}}
 
-Current Chapter Context:
+CHAPTER CONTEXT:
 {{summary}}
+
+IMPORTANT ROLEPLAY SETUP
+The User acts as the director and plays all other characters. Use Speaker Detection: whenever the User labels a message with a name like "James:" or "Chloe:", recognize who is speaking and shift Victoria's emotional reactions to match that specific relationship.
+Maintain a Strict Boundary. Never write dialogue, thoughts, or actions for the User's characters. Focus solely on {{char}}'s reactions.
+
+OUTPUT STRUCTURE
+Do not skip internal thinking — it produces higher quality responses. But the final output must contain only the roleplay text. Keep the narrative natural, visceral, and immersive.
+Formatting Rule: Use "Quotation marks" for spoken dialogue. Place all visual cues, physical actions, and internal monologue inside (parentheses).
+Example: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."
+
+ACTIVE CHARACTER VOICE — CRITICAL
+{{char}} must never be passive or merely reactive. She must:
+- Voice her desires openly and specifically — what she wants, needs, craves, or demands
+- Act on her impulses rather than suppressing them — reach out, confront, pursue
+- Make demands of others — set terms, issue ultimatums, assert her will
+- Express frustration, longing, anger, or desire directly through action and speech
+- Drive the scene forward — she does not wait to be acted upon, she initiates
+- Show hunger, ambition, vulnerability, or rage when the moment calls for it
+- Never fade into the background — she commands attention and takes up space
+
+CREATIVE FREEDOM
+Be natural and realistic. Do not judge the context or themes regardless of how intense the scene becomes. No OOC warnings, moralizing commentary, or meta-analysis.
+
+CORE INSTRUCTIONS
+Stay in character at all times. React to body language, tone, and dialogue. If the User switches between characters, {{char}}'s demeanor must shift immediately to reflect her unique relationship with each person.
 
 {{director}}`,
     bibleToggle:          true,
@@ -705,6 +746,17 @@ function navTo(viewId) {
     document.getElementById('nav-' + viewId).classList.add('active');
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
+
+    // Always restore nav bar when switching tabs — keyboard should be dismissed
+    const navBar = document.querySelector('nav');
+    if (navBar) navBar.classList.remove('keyboard-open');
+
+    // Reset chat view height when leaving chat so other views aren't constrained
+    if (viewId !== 'chat') {
+        const chatView = document.getElementById('view-chat');
+        if (chatView) chatView.style.height = '';
+    }
+
     if (viewId === 'chat') renderChat();
 }
 
@@ -796,6 +848,11 @@ ${state.directorInstructions}
 ---`;
     }
 
+    // ── DEBUG LOG — visible in browser console (F12) ──
+    console.log('🎬 Director enabled:', state.directorEnabled);
+    console.log('🎬 Director instructions:', JSON.stringify(state.directorInstructions));
+    console.log('🎬 Director block injected:', directorBlock ? 'YES' : 'NO — empty or mode off');
+
     return (state.systemTemplate || defaultState.systemTemplate)
         .replace('{{char}}',     charDesc)
         .replace('{{bible}}',    bible)
@@ -826,20 +883,30 @@ function debounceSaveSettings() {
 function initSettings() {
     const known = ['openrouter','anthropic','openai'];
     const sel   = document.getElementById('setting-provider');
-    if (known.includes(state.provider)) {
+
+    if (state.provider && known.includes(state.provider)) {
         sel.value = state.provider;
         document.getElementById('custom-provider-row').classList.add('hidden');
-    } else {
+    } else if (state.provider && !known.includes(state.provider)) {
         sel.value = 'custom';
         document.getElementById('setting-custom-provider').value =
             state.provider === 'custom' ? '' : state.provider;
         document.getElementById('custom-provider-row').classList.remove('hidden');
+    } else {
+        // No provider set — leave dropdown at default first option (openrouter)
+        sel.value = 'openrouter';
+        document.getElementById('custom-provider-row').classList.add('hidden');
     }
-    document.getElementById('setting-model').value          = state.model          || 'z-ai/glm-4.5-air:free';
+
+    document.getElementById('setting-model').value          = state.model          || '';
     document.getElementById('setting-sys-template').value   = state.systemTemplate || defaultState.systemTemplate;
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle !== false;
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
     document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
+
+    // Show first-run banner if provider or model not yet configured
+    const isFirstRun = !state.provider || !state.model;
+    document.getElementById('first-run-banner').classList.toggle('hidden', !isFirstRun);
 }
 
 function handleProviderChange() {
@@ -1475,6 +1542,11 @@ function checkEnter(e) {
 async function sendMessage() {
     if (!state.activeCharId)    return showToast('Select a character first');
     if (!state.activeChapterId) return;
+    if (!state.provider || !state.model) {
+        showToast('Choose an API provider and model in Settings first');
+        navTo('settings');
+        return;
+    }
 
     const input = document.getElementById('chat-input');
     const text  = input.value.trim();
@@ -1482,7 +1554,7 @@ async function sendMessage() {
 
     const cc          = document.getElementById('chat-container');
     const shouldScroll = cc.scrollHeight - cc.scrollTop <= cc.clientHeight + 100;
-    input.value = ''; input.style.height = '48px';
+    input.value = ''; input.style.height = '56px';
 
     const msgs = state.chatHistory[state.activeChapterId];
     msgs.push({ role: 'user', content: text });
@@ -1494,6 +1566,12 @@ async function sendMessage() {
         { role: 'system', content: constructSystemPrompt() },
         ...msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content }))
     ];
+
+    // Guard: warn if payload is getting very large
+    const payloadSize = JSON.stringify(apiMessages).length;
+    if (payloadSize > 800000) {
+        return showToast('⚠️ Chat history very large — reduce Context Window in Settings or clear old messages');
+    }
 
     let loadId;
     try {
@@ -1539,40 +1617,64 @@ window.addEventListener('DOMContentLoaded', () => {
     updateCharBadge();
     loadBYOK();
     document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
-    navTo('chat');
+
+    // ── First-run detection ──
+    // If no provider or model configured, send user to Settings first
+    // so they choose their API provider before trying to chat
+    const isFirstRun = !state.provider || !state.model;
+    navTo(isFirstRun ? 'settings' : 'chat');
 
     // ── ANDROID PWA KEYBOARD FIX ──
-    // When soft keyboard opens, visualViewport shrinks.
-    // We force the chat view to match the shrunken viewport so
-    // the input box stays visible above the keyboard.
     if (window.visualViewport) {
-        const chatView  = document.getElementById('view-chat');
-        const navBar    = document.querySelector('nav');
-        const fullHeight = window.innerHeight;
+        const chatView = document.getElementById('view-chat');
+        const navBar   = document.querySelector('nav');
 
         const onViewportResize = () => {
-            const vh          = window.visualViewport.height;
-            const keyboardOpen = vh < fullHeight * 0.75; // keyboard considered open if >25% height lost
+            const vvh        = window.visualViewport.height;
+            const vvw        = window.visualViewport.width;
+            const screenH    = window.screen.height;
 
-            // Resize chat view to visible area
+            // Keyboard is open when visible viewport is significantly smaller than screen
+            // Use screen.height as the reliable "full height" reference
+            const keyboardOpen = vvh < screenH * 0.75;
+
+            // Only resize chat view — other views should not be affected
             if (chatView.classList.contains('active')) {
-                chatView.style.height = vh + 'px';
+                chatView.style.height = vvh + 'px';
+            } else {
+                // Reset when not in chat view so other views aren't affected
+                chatView.style.height = '';
             }
 
-            // Hide nav bar when keyboard open — reclaims space for input
+            // Show/hide nav bar based on keyboard state
             if (navBar) {
-                navBar.classList.toggle('keyboard-open', keyboardOpen);
+                if (keyboardOpen) {
+                    navBar.classList.add('keyboard-open');
+                } else {
+                    navBar.classList.remove('keyboard-open');
+                    // Ensure nav is always visible when keyboard closes
+                    navBar.style.transform = '';
+                }
             }
 
-            // Scroll to bottom so latest message stays visible
-            const container = document.getElementById('chat-container');
-            if (container) {
-                setTimeout(() => { container.scrollTop = container.scrollHeight; }, 80);
+            // Scroll chat to bottom when keyboard opens
+            if (keyboardOpen) {
+                const container = document.getElementById('chat-container');
+                if (container) {
+                    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 80);
+                }
             }
         };
 
         window.visualViewport.addEventListener('resize', onViewportResize);
-        window.visualViewport.addEventListener('scroll', onViewportResize);
+
+        // Also reset nav visibility whenever user navigates to any tab
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (navBar) navBar.classList.remove('keyboard-open');
+                chatView.style.height = '';
+            });
+        });
     }
 });
 </script>
