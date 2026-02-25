@@ -304,7 +304,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2l)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2m)</span></h2>
 
     <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -492,12 +492,20 @@
         <button class="btn btn-small" onclick="addChapter()">+ New Chapter</button>
     </div>
     <div class="chapter-nav" id="chapter-tabs"></div>
+
+    <!-- Active chapter indicator — always visible above editor -->
+    <div id="active-chapter-indicator" style="background:#1a2a1a;border:1px solid #2d5a2d;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:.8rem;color:var(--success);display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:var(--success);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        <span>AI is using: <strong id="active-chapter-name" style="color:white;">—</strong></span>
+        <span style="color:#555;margin-left:4px;">← this chapter's summary is sent to the AI</span>
+    </div>
+
     <div id="chapter-editor">
         <label>Chapter Title</label>
         <input type="text" id="chapter-title" oninput="debounceSaveChapters()">
-        <label>Summary (Sent to AI)</label>
+        <label>Summary <span style="color:var(--success);font-size:.75rem;">(Sent to AI)</span></label>
         <textarea id="chapter-summary" rows="4" placeholder="Brief summary of current events..." oninput="debounceSaveChapters()"></textarea>
-        <label>Author Notes (Private)</label>
+        <label>Author Notes <span style="color:#555;font-size:.75rem;">(Private — never sent to AI)</span></label>
         <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
         <br>
         <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
@@ -524,7 +532,11 @@
         <div class="chat-header-badges">
             <span class="badge badge-char">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Active Character: <strong id="badge-char-name" style="margin-left:3px;">None</strong>
+                Character: <strong id="badge-char-name" style="margin-left:3px;">None</strong>
+            </span>
+            <span class="badge badge-char" style="border-color:#3d5a3d;">
+                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                Chapter: <strong id="badge-chapter-name" style="margin-left:3px;">None</strong>
             </span>
             <span id="badge-director" class="badge badge-director hidden">
                 <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
@@ -647,7 +659,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2l loaded');
+console.log('RP Companion v1.2.2m loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -1073,6 +1085,15 @@ function loadChapter(id) {
     document.getElementById('chapter-summary').value = ch.summary;
     document.getElementById('chapter-notes').value   = ch.notes;
     if (!state.chatHistory[id]) state.chatHistory[id] = [];
+
+    // ── Update active chapter indicator in Chapters view ──
+    const nameEl = document.getElementById('active-chapter-name');
+    if (nameEl) nameEl.innerText = ch.title || 'Untitled';
+
+    // ── Update active chapter badge in Chat header ──
+    const chatBadgeEl = document.getElementById('badge-chapter-name');
+    if (chatBadgeEl) chatBadgeEl.innerText = ch.title || 'Untitled';
+
     saveState();
 }
 function debounceSaveChapters() {
@@ -1105,6 +1126,11 @@ function renderChat() {
     const container = document.getElementById('chat-container');
     const atBottom  = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
     updateCharBadge();
+
+    // Sync active chapter badge
+    const activeCh     = state.chapters.find(c => c.id === state.activeChapterId);
+    const chapterBadge = document.getElementById('badge-chapter-name');
+    if (chapterBadge) chapterBadge.innerText = activeCh ? (activeCh.title || 'Untitled') : 'None';
 
     const char = state.characters.find(c => c.id === state.activeCharId);
     if (!char) {
