@@ -304,7 +304,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2m)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2n)</span></h2>
 
     <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -525,7 +525,7 @@
                 <button id="btn-toggle-director" class="btn-toggle-dir" onclick="toggleDirectorMode()">
                     🎬 Director's Mode
                 </button>
-                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">Clear</button>
+                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">🗑 Clear Chat</button>
             </div>
         </div>
         <!-- Always-visible status badges -->
@@ -599,7 +599,6 @@
     <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="restoreStateJSON(event)">
 
     <div class="chat-footer-buttons">
-        <button class="btn btn-secondary btn-small" onclick="clearChatHistory()">🗑 Clear Chat</button>
         <button class="btn btn-secondary btn-small" onclick="exportChat()">💬 Export Chat</button>
         <button class="btn btn-secondary btn-small" onclick="exportStateJSON()">💾 Backup</button>
         <button class="btn btn-secondary btn-small" onclick="document.getElementById('restore-file-input').click()">📂 Restore</button>
@@ -659,7 +658,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2m loaded');
+console.log('RP Companion v1.2.2n loaded');
 
 // ─────────────────────────────────────────
 // STATE
