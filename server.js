@@ -1,12 +1,12 @@
 // server.js - Railway Backend
 // ─────────────────────────────────────────
 // REVISION HISTORY
-// v1.2.2k — Payload size guard on /api/chat and /api/draft (4mb hard limit)
-//            Logging middleware for large requests (>1mb logged to Railway)
-//            express.json limit raised to 50mb (handles long sessions)
-//            express.urlencoded limit added (50mb, extended)
-//            [from v1.2.2j] Draft AI voice fix, Anthropic compat, GLM thinking
-//            suppression, Android PWA fixes, Railway JSON error fix
+// v1.2.2o — fix buy draft asistant and director mode instrcntions were ignored
+//            
+//            
+//            
+//            
+//            
 // ─────────────────────────────────────────
 
 const express = require('express');
@@ -270,18 +270,23 @@ STRICT RULES:
 - Do NOT repeat, echo, or extend ${aiCharName}'s last line
 - Do NOT include any preamble, explanation, reasoning, or meta-commentary
 - Do NOT think out loud — output ONLY ${draftName}'s reply, nothing else
-- Start your output directly with ${draftName}'s words or action${draftPrompt ? `
-
-DIRECTION FOR THIS DRAFT:
-${draftPrompt}` : ''}`;
+- Start your output directly with ${draftName}'s words or action`;
 
     const transcript = messages.map(m => {
       const speaker = m.role === 'assistant' ? aiCharName : draftName;
       return `${speaker}:\n${m.content}`;
     }).join('\n\n');
 
+    // ── Guidance placed HERE — right next to generation instruction ──
+    // Putting it at the bottom of the final user message means the model
+    // reads it immediately before generating, maximising compliance.
+    // Previously it was buried in the system prompt and often ignored.
+    const guidanceBlock = draftPrompt
+      ? `\n\nDIRECTOR'S GUIDANCE FOR THIS DRAFT — follow this precisely:\n${draftPrompt}`
+      : '';
+
     const transcriptUserMsg =
-      `SCENE TRANSCRIPT:\n\n${transcript}\n\n---\n` +
+      `SCENE TRANSCRIPT:\n\n${transcript}\n\n---${guidanceBlock}\n\n` +
       `Now write ${draftName}'s next reply. Output only ${draftName}'s response, nothing else.`;
 
     const draftMessages = [
