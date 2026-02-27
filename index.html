@@ -304,7 +304,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2o)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2p)</span></h2>
 
     <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -541,6 +541,7 @@
             <span id="badge-director" class="badge badge-director hidden">
                 <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
                 🎬 Director's Mode Active
+                <button onclick="toggleDirectorPanel()" style="background:none;border:1px solid var(--dir-border);color:var(--dir-text);border-radius:4px;font-size:.68rem;padding:1px 6px;cursor:pointer;margin-left:4px;">✏️ Edit</button>
             </span>
         </div>
     </div>
@@ -658,7 +659,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2o loaded');
+console.log('RP Companion v1.2.2p loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -808,6 +809,16 @@ function applyDirectorUI() {
     }
 }
 
+/** Toggle just the panel visibility — mode stays ON */
+function toggleDirectorPanel() {
+    const panel = document.getElementById('director-panel');
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        // Repopulate with current saved instructions when reopening
+        document.getElementById('director-instructions').value = state.directorInstructions || '';
+    }
+}
+
 /** Auto-save director instructions 1.5s after user stops typing. */
 function directorTyping() {
     clearTimeout(dirTypingTimer);
@@ -816,8 +827,8 @@ function directorTyping() {
 
 /**
  * Save director instructions to state.
- * silent=true = no visual "Applied ✓" flash (used for auto-save).
- * silent=false = flash the status indicator (used for button click).
+ * silent=true = auto-save (no flash, no collapse).
+ * silent=false = button click (flash "Applied ✓" then collapse panel).
  */
 function saveDirectorInstructions(silent = false) {
     state.directorInstructions = (document.getElementById('director-instructions').value || '').trim();
@@ -825,7 +836,11 @@ function saveDirectorInstructions(silent = false) {
     if (!silent) {
         const el = document.getElementById('dir-save-status');
         el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2200);
+        // Collapse panel 1s after Apply so user sees the "Applied ✓" confirmation
+        setTimeout(() => {
+            el.classList.remove('show');
+            document.getElementById('director-panel').classList.add('hidden');
+        }, 1000);
     }
 }
 
