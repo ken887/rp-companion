@@ -37,7 +37,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg); color: var(--primary-text);
             height: 100vh;
-            height: 100dvh; /* dynamic viewport — accounts for Android keyboard */
+            height: 100dvh;
             display: flex; flex-direction: column; overflow: hidden;
         }
 
@@ -57,7 +57,7 @@
             display: flex; justify-content: space-around; align-items: center; z-index: 100;
             transition: transform .15s ease;
         }
-        nav.keyboard-open { transform: translateY(100%); } /* hide nav when keyboard open */
+        nav.keyboard-open { transform: translateY(100%); }
         .nav-btn {
             background: none; border: none; color: var(--muted);
             font-size: .75rem; display: flex; flex-direction: column;
@@ -110,7 +110,6 @@
             display: none; flex-direction: column;
             height: 100vh; height: 100dvh;
             padding: 0; overflow: hidden;
-            /* Android keyboard fix: allow entire chat to shrink with viewport */
             min-height: 0;
         }
         #view-chat.active { display: flex; }
@@ -120,7 +119,6 @@
         .chat-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .chat-header-title { font-size: 1rem; font-weight: 700; }
         .chat-header-buttons { display: flex; gap: 6px; align-items: center; }
-        /* Persistent badges row */
         .chat-header-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .badge {
             display: inline-flex; align-items: center; gap: 5px;
@@ -132,7 +130,6 @@
         .badge-director svg { width: 11px; height: 11px; fill: var(--dir-text); }
         .badge.hidden { display: none !important; }
 
-        /* Director Mode toggle button */
         .btn-toggle-dir {
             background: transparent; border: 1px solid #555; color: #999;
             padding: 5px 11px; border-radius: 6px; font-size: .78rem;
@@ -144,7 +141,6 @@
         .director-panel {
             background: var(--dir-panel); border-bottom: 2px solid var(--dir-border);
             padding: 12px 15px; flex-shrink: 0;
-            /* Android: cap height so panel doesn't fill screen when keyboard opens */
             max-height: 40dvh;
             max-height: 40vh;
             overflow-y: auto;
@@ -199,10 +195,10 @@
             flex: 1; margin-bottom: 0; resize: none;
             min-height: 56px; max-height: 160px;
             overflow-y: auto; line-height: 1.5;
-            font-size: 16px; /* prevents iOS zoom on focus */
+            font-size: 16px;
             padding: 10px 12px;
             border-radius: 10px;
-            -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+            -webkit-overflow-scrolling: touch;
         }
         #send-btn {
             height: 56px; width: 56px; min-width: 56px;
@@ -252,7 +248,7 @@
         .draft-guidance {
             width: 100%; background: #151c33; border: 1px solid #2d3f6e;
             color: #c7d2fe; padding: 8px 10px; border-radius: 5px;
-            font-size: 16px; /* prevents iOS zoom */
+            font-size: 16px;
             margin-bottom: 7px; resize: vertical;
             min-height: 70px; max-height: 200px;
             font-family: inherit; line-height: 1.5;
@@ -304,9 +300,9 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2p)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2q)</span></h2>
 
-    <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
+    <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-size:.95rem;font-weight:700;color:var(--primary);margin-bottom:6px;">👋 Welcome to RP Companion!</div>
         <p style="font-size:.82rem;color:var(--muted);margin:0 0 10px 0;">
@@ -348,7 +344,6 @@
         <div style="background:#1a1a2a;padding:12px;border-radius:6px;border:1px solid #2d2d5a;">
             <div style="font-size:.85rem;font-weight:700;color:#818cf8;margin-bottom:10px;">✍️ AI #2 — Draft Assistant</div>
 
-            <!-- Key Source toggle -->
             <label style="font-size:.8rem;margin-bottom:8px;">Key Source</label>
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:.85rem;color:var(--primary-text);">
@@ -369,7 +364,6 @@
                 </label>
             </div>
 
-            <!-- BYOK fields — hidden when server key selected -->
             <div id="byok-fields">
                 <label style="font-size:.8rem;">API Provider</label>
                 <select id="byok-provider" onchange="onByokProviderChange()">
@@ -398,7 +392,6 @@
                 </div>
             </div>
 
-            <!-- Server key notice — shown when server selected -->
             <div id="byok-server-notice" style="display:none;background:#1a2a1a;padding:8px 10px;border-radius:5px;border:1px solid #2d5a2d;">
                 <p style="font-size:.75rem;color:var(--success);margin:0;">
                     ✅ Server key will be used for Draft Assistant.<br>
@@ -426,6 +419,10 @@
         <label>Context Window Size (Message Pairs)</label>
         <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
         <span class="range-value" id="ctx-val">15</span>
+        <!-- v1.2.2q: note that Draft Assistant now also respects this setting -->
+        <p style="font-size:.74rem;color:#555;margin-top:6px;margin-bottom:0;">
+            ℹ️ This setting now applies to both the main chat <strong style="color:var(--muted);">and</strong> the Draft Assistant.
+        </p>
     </div>
 
     <div class="setting-group">
@@ -493,7 +490,6 @@
     </div>
     <div class="chapter-nav" id="chapter-tabs"></div>
 
-    <!-- Active chapter indicator — always visible above editor -->
     <div id="active-chapter-indicator" style="background:#1a2a1a;border:1px solid #2d5a2d;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:.8rem;color:var(--success);display:flex;align-items:center;gap:6px;">
         <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:var(--success);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
         <span>AI is using: <strong id="active-chapter-name" style="color:white;">—</strong></span>
@@ -517,7 +513,6 @@
 ══════════════════════════════ -->
 <main id="view-chat" class="view">
 
-    <!-- HEADER with persistent indicators -->
     <div class="chat-header">
         <div class="chat-header-row">
             <span class="chat-header-title" id="chat-active-name">No Character Selected</span>
@@ -528,7 +523,6 @@
                 <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">🗑 Clear Chat</button>
             </div>
         </div>
-        <!-- Always-visible status badges -->
         <div class="chat-header-badges">
             <span class="badge badge-char">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -546,7 +540,7 @@
         </div>
     </div>
 
-    <!-- DIRECTOR PANEL — separate input, never appears in chat -->
+    <!-- DIRECTOR PANEL -->
     <div id="director-panel" class="director-panel hidden">
         <div class="director-panel-header">
             <span class="director-panel-title">
@@ -659,7 +653,26 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-console.log('RP Companion v1.2.2p loaded');
+// =============================================================================
+// RP Companion v1.2.2q
+//
+// CHANGELOG v1.2.2q
+// -----------------
+// FIX: Draft Assistant now respects the Context Window setting (same slider
+//      used by the main chat). Previously the Draft Assistant sent the entire
+//      chat history to the AI regardless of length, causing token-limit errors
+//      on long sessions. The fix applies msgs.slice(-(state.contextWindow * 2))
+//      before building the draft payload — identical to how the main chat
+//      trims its history. Both AI #1 (main chat) and AI #2 (Draft Assistant)
+//      now always stay in sync with the user's chosen context window size.
+//
+// AFFECTED FUNCTION: generateDraft()
+// LINE CHANGED:
+//   BEFORE: messages: msgs.map(m => ({ role: m.role, content: m.content })),
+//   AFTER:  messages: msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
+// =============================================================================
+
+console.log('RP Companion v1.2.2q loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -759,11 +772,9 @@ function navTo(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
 
-    // Always restore nav bar when switching tabs — keyboard should be dismissed
     const navBar = document.querySelector('nav');
     if (navBar) navBar.classList.remove('keyboard-open');
 
-    // Reset chat view height when leaving chat so other views aren't constrained
     if (viewId !== 'chat') {
         const chatView = document.getElementById('view-chat');
         if (chatView) chatView.style.height = '';
@@ -775,11 +786,6 @@ function navTo(viewId) {
 // ─────────────────────────────────────────
 // DIRECTOR'S MODE
 // ─────────────────────────────────────────
-
-/**
- * Toggle Director's Mode on/off.
- * State is persisted to localStorage so it survives page reload.
- */
 function toggleDirectorMode() {
     state.directorEnabled = !state.directorEnabled;
     saveState();
@@ -787,10 +793,6 @@ function toggleDirectorMode() {
     showToast(state.directorEnabled ? "Director's Mode ON" : "Director's Mode OFF");
 }
 
-/**
- * Sync UI to current state.directorEnabled value.
- * Called on init, toggle, and restore.
- */
 function applyDirectorUI() {
     const on    = state.directorEnabled;
     const btn   = document.getElementById('btn-toggle-director');
@@ -804,39 +806,29 @@ function applyDirectorUI() {
     badge.classList.toggle('hidden', !on);
 
     if (on) {
-        // Populate panel with saved instructions
         document.getElementById('director-instructions').value = state.directorInstructions || '';
     }
 }
 
-/** Toggle just the panel visibility — mode stays ON */
 function toggleDirectorPanel() {
     const panel = document.getElementById('director-panel');
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
-        // Repopulate with current saved instructions when reopening
         document.getElementById('director-instructions').value = state.directorInstructions || '';
     }
 }
 
-/** Auto-save director instructions 1.5s after user stops typing. */
 function directorTyping() {
     clearTimeout(dirTypingTimer);
     dirTypingTimer = setTimeout(() => saveDirectorInstructions(true), 1500);
 }
 
-/**
- * Save director instructions to state.
- * silent=true = auto-save (no flash, no collapse).
- * silent=false = button click (flash "Applied ✓" then collapse panel).
- */
 function saveDirectorInstructions(silent = false) {
     state.directorInstructions = (document.getElementById('director-instructions').value || '').trim();
     saveState();
     if (!silent) {
         const el = document.getElementById('dir-save-status');
         el.classList.add('show');
-        // Collapse panel 1s after Apply so user sees the "Applied ✓" confirmation
         setTimeout(() => {
             el.classList.remove('show');
             document.getElementById('director-panel').classList.add('hidden');
@@ -844,7 +836,6 @@ function saveDirectorInstructions(silent = false) {
     }
 }
 
-/** Clear director instructions panel and state. */
 function clearDirectorInstructions() {
     document.getElementById('director-instructions').value = '';
     state.directorInstructions = '';
@@ -854,8 +845,6 @@ function clearDirectorInstructions() {
 
 // ─────────────────────────────────────────
 // SYSTEM PROMPT
-// Director block is injected via {{director}} tag.
-// When mode is OFF the tag is replaced with an empty string — clean removal.
 // ─────────────────────────────────────────
 function constructSystemPrompt() {
     const char     = state.characters.find(c => c.id === state.activeCharId);
@@ -874,7 +863,6 @@ ${state.directorInstructions}
 ---`;
     }
 
-    // ── DEBUG LOG — visible in browser console (F12) ──
     console.log('🎬 Director enabled:', state.directorEnabled);
     console.log('🎬 Director instructions:', JSON.stringify(state.directorInstructions));
     console.log('🎬 Director block injected:', directorBlock ? 'YES' : 'NO — empty or mode off');
@@ -919,7 +907,6 @@ function initSettings() {
             state.provider === 'custom' ? '' : state.provider;
         document.getElementById('custom-provider-row').classList.remove('hidden');
     } else {
-        // No provider set — leave dropdown at default first option (openrouter)
         sel.value = 'openrouter';
         document.getElementById('custom-provider-row').classList.add('hidden');
     }
@@ -930,7 +917,6 @@ function initSettings() {
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
     document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
 
-    // Show first-run banner if provider or model not yet configured
     const isFirstRun = !state.provider || !state.model;
     document.getElementById('first-run-banner').classList.toggle('hidden', !isFirstRun);
 }
@@ -1054,10 +1040,6 @@ function selectCharacter(id) {
     saveState(); renderCharacterList(); updateCharBadge(); navTo('chat');
 }
 
-/**
- * Keep the Active Character badge + header title in sync.
- * Called on select, render, init, and restore.
- */
 function updateCharBadge() {
     const char = state.characters.find(c => c.id === state.activeCharId);
     const name = char ? char.name : 'None';
@@ -1100,11 +1082,9 @@ function loadChapter(id) {
     document.getElementById('chapter-notes').value   = ch.notes;
     if (!state.chatHistory[id]) state.chatHistory[id] = [];
 
-    // ── Update active chapter indicator in Chapters view ──
     const nameEl = document.getElementById('active-chapter-name');
     if (nameEl) nameEl.innerText = ch.title || 'Untitled';
 
-    // ── Update active chapter badge in Chat header ──
     const chatBadgeEl = document.getElementById('badge-chapter-name');
     if (chatBadgeEl) chatBadgeEl.innerText = ch.title || 'Untitled';
 
@@ -1141,7 +1121,6 @@ function renderChat() {
     const atBottom  = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
     updateCharBadge();
 
-    // Sync active chapter badge
     const activeCh     = state.chapters.find(c => c.id === state.activeChapterId);
     const chapterBadge = document.getElementById('badge-chapter-name');
     if (chapterBadge) chapterBadge.innerText = activeCh ? (activeCh.title || 'Untitled') : 'None';
@@ -1161,16 +1140,13 @@ function renderChat() {
         const isUser = msg.role === 'user';
         const msgNum = idx + 1;
 
-        // Wrapper
         const wrap = document.createElement('div');
         wrap.className = `msg-wrap ${isUser ? 'user-wrap' : 'ai-wrap'}`;
 
-        // Bubble
         const bubble = document.createElement('div');
         bubble.className = `msg ${isUser ? 'msg-user' : 'msg-ai'}`;
         bubble.innerText = msg.content;
 
-        // Meta row (number + copy button)
         const meta = document.createElement('div');
         meta.className = 'msg-meta';
         meta.innerHTML = `
@@ -1183,7 +1159,6 @@ function renderChat() {
         wrap.appendChild(bubble);
         wrap.appendChild(meta);
 
-        // Draft trigger button — only on AI (Victoria) messages
         if (!isUser) {
             const draftTrigger = document.createElement('button');
             draftTrigger.className = 'btn-draft-trigger';
@@ -1195,7 +1170,6 @@ function renderChat() {
             draftTrigger.onclick = () => openDraftPanel(idx);
             wrap.appendChild(draftTrigger);
 
-            // Draft panel placeholder (hidden until opened)
             const draftPanel = document.createElement('div');
             draftPanel.className = 'draft-panel';
             draftPanel.id = `draft-panel-${idx}`;
@@ -1216,7 +1190,6 @@ function clearChatHistory() {
     }
 }
 
-/** Copy a specific message by index. Shows brief "Copied!" feedback on the button. */
 function copyMsg(btn, idx) {
     const msgs = state.chatHistory[state.activeChapterId] || [];
     const text = msgs[idx] ? msgs[idx].content : '';
@@ -1233,10 +1206,7 @@ function copyMsg(btn, idx) {
 
 // ─────────────────────────────────────────
 // BYOK — Bring Your Own Key
-// Stored separately in localStorage under 'rp-byok'
-// Never included in main state backup
 // ─────────────────────────────────────────
-
 const BYOK_MODEL_HINTS = {
     openrouter: 'e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>',
     anthropic:  'e.g. <code>claude-sonnet-4-6</code> or <code>claude-haiku-4-5-20251001</code>',
@@ -1252,12 +1222,10 @@ const BYOK_MODEL_DEFAULTS = {
 function loadBYOK() {
     const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
 
-    // Key source radio — default to 'server' for ease of testing
     const source = byok.keySource || 'server';
     const radio  = document.getElementById(source === 'server' ? 'draft-use-server' : 'draft-use-byok');
     if (radio) radio.checked = true;
 
-    // Provider, model, key
     const providerEl = document.getElementById('byok-provider');
     if (providerEl) providerEl.value = byok.provider || 'openrouter';
     const modelEl = document.getElementById('byok-model');
@@ -1341,11 +1309,7 @@ function getBYOK() {
 // ─────────────────────────────────────────
 // DRAFT ASSISTANT — AI #2
 // ─────────────────────────────────────────
-
-/** Build the inner HTML of a draft panel for a given AI message index */
 function buildDraftPanelHTML(idx) {
-    // Find non-Victoria characters for the "draft as" selector
-    const char    = state.characters.find(c => c.id === state.activeCharId);
     const others  = state.characters.filter(c => c.id !== state.activeCharId);
     const options = others.map(c =>
         `<option value="${c.id}">${c.name}</option>`
@@ -1376,24 +1340,20 @@ function buildDraftPanelHTML(idx) {
             </button>
         </div>
         <p style="font-size:.68rem;color:#3d4f7a;margin:6px 0 0 0;">
-            AI #2 drafts as the selected character using full chat history for context.
-            Director's Mode and Author's Notes are excluded by design.
+            AI #2 drafts as the selected character using the last ${state.contextWindow} message pairs for context (matches your Context Window setting).
         </p>`;
 }
 
-/** Open draft panel, close others */
 function openDraftPanel(idx) {
     const byok   = getBYOK();
     const source = byok.keySource || 'byok';
 
-    // If BYOK mode but no key, redirect to settings
     if (source === 'byok' && !byok.key) {
         showToast('Add your API key in Settings → Draft Assistant to use this feature');
         navTo('settings');
         return;
     }
 
-    // Close any other open panels
     document.querySelectorAll('.draft-panel').forEach(p => { p.style.display = 'none'; });
     document.querySelectorAll('.btn-draft-trigger').forEach(b => { b.style.display = 'inline-flex'; });
 
@@ -1403,7 +1363,11 @@ function openDraftPanel(idx) {
     if (trigger) { trigger.style.display = 'none'; }
 }
 
-/** Call /api/draft — uses BYOK key or null (server key) depending on user setting */
+// ─────────────────────────────────────────
+// generateDraft — v1.2.2q FIX
+// Previously sent ALL chat history (msgs.map(...)) which caused token-limit
+// errors on long sessions. Now trims to the same context window as main chat.
+// ─────────────────────────────────────────
 async function generateDraft(idx) {
     const byok       = getBYOK();
     const source     = byok.keySource || 'byok';
@@ -1433,9 +1397,9 @@ async function generateDraft(idx) {
     if (sendBtn) { sendBtn.style.display = 'none'; }
     if (copyBtn) { copyBtn.style.display = 'none'; }
 
-    const msgs      = state.chatHistory[state.activeChapterId] || [];
-    const provider  = source === 'server' ? state.provider : (byok.provider || 'openrouter');
-    const model     = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
+    const msgs     = state.chatHistory[state.activeChapterId] || [];
+    const provider = source === 'server' ? state.provider : (byok.provider || 'openrouter');
+    const model    = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
 
     try {
         const activeChar = state.characters.find(c => c.id === state.activeCharId);
@@ -1445,10 +1409,13 @@ async function generateDraft(idx) {
             body: JSON.stringify({
                 provider,
                 model,
-                messages:       msgs.map(m => ({ role: m.role, content: m.content })),
+                // ── v1.2.2q FIX: apply same context window trim as main chat ──
+                // BEFORE: msgs.map(m => ({ role: m.role, content: m.content }))
+                // AFTER:  msgs.slice(-(state.contextWindow * 2)).map(...)
+                messages:       msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
                 draftChar:      { name: draftChar.name, desc: draftChar.desc },
                 draftPrompt:    guidance,
-                userApiKey,     // null = use server key, string = use BYOK
+                userApiKey,
                 activeCharName: activeChar ? activeChar.name : 'the main character'
             })
         });
@@ -1456,8 +1423,6 @@ async function generateDraft(idx) {
 
         if (response.ok) {
             const draftText = data.choices[0].message.content;
-            // Bug fix: clear innerHTML first before setting innerText
-            // to prevent duplication from leftover spinner HTML
             outputEl.innerHTML    = '';
             outputEl.innerText    = draftText;
             outputEl.dataset.draft = draftText;
@@ -1473,7 +1438,6 @@ async function generateDraft(idx) {
     }
 }
 
-/** Copy the generated draft to clipboard */
 function copyDraft(idx) {
     const outputEl = document.getElementById(`draft-output-${idx}`);
     const text     = outputEl?.dataset.draft || '';
@@ -1481,21 +1445,17 @@ function copyDraft(idx) {
     navigator.clipboard.writeText(text).then(() => showToast('Draft copied to clipboard!'));
 }
 
-/** Send the accepted draft as a user message in the main chat */
 function sendDraftAsReply(idx) {
     const outputEl = document.getElementById(`draft-output-${idx}`);
     const text     = outputEl?.dataset.draft || '';
     if (!text) return;
 
-    // Bug fix: explicitly clear the input first, then set value
-    // prevents any existing content being appended to the draft
     const chatInput   = document.getElementById('chat-input');
     chatInput.value   = '';
     chatInput.value   = text.trim();
     autoResizeTextarea(chatInput);
     closeDraftPanel(idx);
 
-    // Clear the draft panel output so it's fresh next time
     if (outputEl) {
         outputEl.innerHTML     = '';
         outputEl.dataset.draft = '';
@@ -1508,6 +1468,13 @@ function sendDraftAsReply(idx) {
 
     chatInput.focus();
     showToast('Draft loaded — review then press Send');
+}
+
+function closeDraftPanel(idx) {
+    const panel   = document.getElementById(`draft-panel-${idx}`);
+    const trigger = document.getElementById(`draft-trigger-${idx}`);
+    if (panel)   panel.style.display   = 'none';
+    if (trigger) trigger.style.display = 'inline-flex';
 }
 
 // ─────────────────────────────────────────
@@ -1559,11 +1526,9 @@ function restoreStateJSON(event) {
 // CHAT INPUT
 // ─────────────────────────────────────────
 function autoResizeTextarea(ta) {
-    // Reset to min-height first so shrinking works correctly
     ta.style.height = '56px';
     const newHeight = Math.min(ta.scrollHeight, 160);
     ta.style.height = newHeight + 'px';
-    // Allow scroll when content exceeds max height
     ta.style.overflowY = ta.scrollHeight > 160 ? 'auto' : 'hidden';
 }
 function checkEnter(e) {
@@ -1572,12 +1537,6 @@ function checkEnter(e) {
 
 // ─────────────────────────────────────────
 // SEND MESSAGE
-//
-// Director's Mode works entirely through the system prompt:
-//   - Instructions are injected via constructSystemPrompt() → {{director}} tag
-//   - They are NEVER added as chat messages
-//   - Chat history stays clean: only role+content from user/assistant
-//   - reasoning_content and any extra fields are stripped from API payload
 // ─────────────────────────────────────────
 async function sendMessage() {
     if (!state.activeCharId)    return showToast('Select a character first');
@@ -1601,13 +1560,11 @@ async function sendMessage() {
     saveState(); renderChat();
     if (shouldScroll) cc.scrollTop = cc.scrollHeight;
 
-    // Strip ALL extra fields — only role + content go to API
     const apiMessages = [
         { role: 'system', content: constructSystemPrompt() },
         ...msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content }))
     ];
 
-    // Guard: warn if payload is getting very large
     const payloadSize = JSON.stringify(apiMessages).length;
     if (payloadSize > 800000) {
         return showToast('⚠️ Chat history very large — reduce Context Window in Settings or clear old messages');
@@ -1658,46 +1615,33 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBYOK();
     document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
 
-    // ── First-run detection ──
-    // If no provider or model configured, send user to Settings first
-    // so they choose their API provider before trying to chat
     const isFirstRun = !state.provider || !state.model;
     navTo(isFirstRun ? 'settings' : 'chat');
 
-    // ── ANDROID PWA KEYBOARD FIX ──
     if (window.visualViewport) {
         const chatView = document.getElementById('view-chat');
         const navBar   = document.querySelector('nav');
 
         const onViewportResize = () => {
             const vvh        = window.visualViewport.height;
-            const vvw        = window.visualViewport.width;
             const screenH    = window.screen.height;
-
-            // Keyboard is open when visible viewport is significantly smaller than screen
-            // Use screen.height as the reliable "full height" reference
             const keyboardOpen = vvh < screenH * 0.75;
 
-            // Only resize chat view — other views should not be affected
             if (chatView.classList.contains('active')) {
                 chatView.style.height = vvh + 'px';
             } else {
-                // Reset when not in chat view so other views aren't affected
                 chatView.style.height = '';
             }
 
-            // Show/hide nav bar based on keyboard state
             if (navBar) {
                 if (keyboardOpen) {
                     navBar.classList.add('keyboard-open');
                 } else {
                     navBar.classList.remove('keyboard-open');
-                    // Ensure nav is always visible when keyboard closes
                     navBar.style.transform = '';
                 }
             }
 
-            // Scroll chat to bottom when keyboard opens
             if (keyboardOpen) {
                 const container = document.getElementById('chat-container');
                 if (container) {
@@ -1708,7 +1652,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
         window.visualViewport.addEventListener('resize', onViewportResize);
 
-        // Also reset nav visibility whenever user navigates to any tab
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (navBar) navBar.classList.remove('keyboard-open');
