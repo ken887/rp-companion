@@ -237,6 +237,16 @@
         .btn-copy-msg svg { width: 12px; height: 12px; fill: currentColor; }
         .btn-copy-msg.copied { color: var(--success); }
 
+        /* ── TOKEN / WORD COUNT BADGE ── */
+        .msg-token-badge {
+            font-size: .64rem; color: #4a4a6a;
+            background: #1a1a2e; border: 1px solid #2a2a4a;
+            border-radius: 10px; padding: 1px 7px;
+            display: inline-flex; align-items: center; gap: 3px;
+            white-space: nowrap;
+        }
+        .msg-token-badge.over-limit { color: #f87171; border-color: #7f1d1d; background: #1f0f0f; }
+
         /* ── DRAFT ASSISTANT ── */
         .draft-panel {
             align-self: flex-start; width: 85%; margin-top: -8px;
@@ -282,6 +292,14 @@
         .btn-draft-trigger:hover { background: #0f1629; border-color: #818cf8; }
         .btn-draft-trigger svg { width: 11px; height: 11px; fill: currentColor; }
         .draft-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(129,140,248,.2); border-top-color: #818cf8; border-radius: 50%; animation: spin 1s linear infinite; }
+        .draft-token-badge {
+            font-size: .64rem; color: #4a4a6a;
+            background: #0f0f1e; border: 1px solid #2a2a4a;
+            border-radius: 10px; padding: 1px 7px;
+            display: inline-flex; align-items: center; gap: 3px;
+            margin-top: 5px; white-space: nowrap;
+        }
+        .draft-token-badge.over-limit { color: #f87171; border-color: #7f1d1d; background: #1f0f0f; }
 
         /* ── MISC ── */
         .hidden { display: none !important; }
@@ -300,7 +318,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2q)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2r)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -419,7 +437,7 @@
         <label>Context Window Size (Message Pairs)</label>
         <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
         <span class="range-value" id="ctx-val">15</span>
-        <!-- v1.2.2q: note that Draft Assistant now also respects this setting -->
+        <!-- v1.2.2r: note that Draft Assistant now also respects this setting -->
         <p style="font-size:.74rem;color:#555;margin-top:6px;margin-bottom:0;">
             ℹ️ This setting now applies to both the main chat <strong style="color:var(--muted);">and</strong> the Draft Assistant.
         </p>
@@ -654,25 +672,32 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.2q
+// RP Companion v1.2.2r
 //
-// CHANGELOG v1.2.2q
+// CHANGELOG v1.2.2r
 // -----------------
-// FIX: Draft Assistant now respects the Context Window setting (same slider
-//      used by the main chat). Previously the Draft Assistant sent the entire
-//      chat history to the AI regardless of length, causing token-limit errors
-//      on long sessions. The fix applies msgs.slice(-(state.contextWindow * 2))
-//      before building the draft payload — identical to how the main chat
-//      trims its history. Both AI #1 (main chat) and AI #2 (Draft Assistant)
-//      now always stay in sync with the user's chosen context window size.
+// FEAT: 400-word output limit enforced on both AI #1 (main chat) and
+//       AI #2 (Draft Assistant) via two mechanisms:
 //
-// AFFECTED FUNCTION: generateDraft()
-// LINE CHANGED:
-//   BEFORE: messages: msgs.map(m => ({ role: m.role, content: m.content })),
-//   AFTER:  messages: msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
+//   1. SYSTEM PROMPT INSTRUCTION — appended to every system prompt:
+//      "RESPONSE LENGTH: Keep your response under 400 words."
+//      The AI will try to self-limit its narrative output.
+//
+//   2. max_tokens API PARAMETER — hard cap of 600 tokens sent on every
+//      API call (600 tokens ≈ 400 words with headroom for punctuation/
+//      formatting). Prevents the API from returning more even if the AI
+//      ignores the instruction.
+//
+// FEAT: Token count badge displayed on every AI reply (main chat and draft).
+//       Shows estimated tokens used (content length / 4, a standard approx).
+//       Badge turns red if response appears to have hit the limit (≥ 580 tokens).
+//
+// AFFECTED FUNCTIONS: constructSystemPrompt(), sendMessage(), generateDraft(),
+//                     renderChat(), buildDraftPanelHTML()
+// NEW HELPERS:        estimateTokens(text), buildTokenBadgeHTML(tokens)
 // =============================================================================
 
-console.log('RP Companion v1.2.2q loaded');
+console.log('RP Companion v1.2.2r loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -762,6 +787,27 @@ function showToast(msg) {
 }
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 function saveState()   { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
+
+// ─────────────────────────────────────────
+// TOKEN HELPERS
+// estimateTokens: ~4 chars per token (standard approximation)
+// MAX_TOKENS: hard API cap sent with every request
+// MAX_WORDS:  instruction added to system prompt
+// ─────────────────────────────────────────
+const MAX_TOKENS = 600;   // hard API cap  (≈ 400 words + headroom)
+const MAX_WORDS  = 400;   // system prompt instruction
+
+function estimateTokens(text) {
+    return Math.round((text || '').length / 4);
+}
+
+function buildTokenBadgeHTML(tokens, cssClass = 'msg-token-badge') {
+    const overLimit = tokens >= 580;
+    const cls = overLimit ? `${cssClass} over-limit` : cssClass;
+    const icon = overLimit ? '⚠️' : '🔢';
+    const label = overLimit ? `~${tokens} tokens (limit hit)` : `~${tokens} tokens`;
+    return `<span class="${cls}">${icon} ${label}</span>`;
+}
 
 // ─────────────────────────────────────────
 // NAV
@@ -871,7 +917,8 @@ ${state.directorInstructions}
         .replace('{{char}}',     charDesc)
         .replace('{{bible}}',    bible)
         .replace('{{summary}}',  summary)
-        .replace('{{director}}', directorBlock);
+        .replace('{{director}}', directorBlock)
+        + `\n\nRESPONSE LENGTH: Keep your response under ${MAX_WORDS} words.`;
 }
 
 // ─────────────────────────────────────────
@@ -1149,12 +1196,18 @@ function renderChat() {
 
         const meta = document.createElement('div');
         meta.className = 'msg-meta';
+
+        // Token badge — shown on AI messages only
+        const tokenBadgeHTML = !isUser
+            ? buildTokenBadgeHTML(estimateTokens(msg.content))
+            : '';
+
         meta.innerHTML = `
             <span class="msg-num">#${msgNum}</span>
             <button class="btn-copy-msg" title="Copy message #${msgNum}" onclick="copyMsg(this, ${idx})">
                 <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                 Copy
-            </button>`;
+            </button>${tokenBadgeHTML}`;
 
         wrap.appendChild(bubble);
         wrap.appendChild(meta);
@@ -1410,22 +1463,31 @@ async function generateDraft(idx) {
                 provider,
                 model,
                 // ── v1.2.2q FIX: apply same context window trim as main chat ──
-                // BEFORE: msgs.map(m => ({ role: m.role, content: m.content }))
-                // AFTER:  msgs.slice(-(state.contextWindow * 2)).map(...)
                 messages:       msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
                 draftChar:      { name: draftChar.name, desc: draftChar.desc },
                 draftPrompt:    guidance,
                 userApiKey,
-                activeCharName: activeChar ? activeChar.name : 'the main character'
+                activeCharName: activeChar ? activeChar.name : 'the main character',
+                max_tokens:     MAX_TOKENS   // v1.2.2r: hard cap
             })
         });
         const data = await response.json();
 
         if (response.ok) {
-            const draftText = data.choices[0].message.content;
+            const draftText  = data.choices[0].message.content;
+            const tokensUsed = estimateTokens(draftText);
             outputEl.innerHTML    = '';
             outputEl.innerText    = draftText;
             outputEl.dataset.draft = draftText;
+
+            // Token badge below draft output
+            const existingBadge = document.getElementById(`draft-token-${idx}`);
+            if (existingBadge) existingBadge.remove();
+            const badge = document.createElement('div');
+            badge.id = `draft-token-${idx}`;
+            badge.innerHTML = buildTokenBadgeHTML(tokensUsed, 'draft-token-badge');
+            outputEl.insertAdjacentElement('afterend', badge);
+
             if (sendBtn) { sendBtn.style.display = 'inline-block'; }
             if (copyBtn) { copyBtn.style.display = 'inline-block'; }
         } else {
@@ -1582,7 +1644,7 @@ async function sendMessage() {
         const res  = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages })
+            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages, max_tokens: MAX_TOKENS })
         });
         const data = await res.json();
         document.getElementById(loadId)?.remove();
