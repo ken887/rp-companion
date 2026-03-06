@@ -318,7 +318,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2r)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2s)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -430,6 +430,71 @@
     </div>
 
     <div class="setting-group">
+        <h3>🎭 Output Style</h3>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+            Controls how the AI structures its replies. Applied to every response automatically.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
+                background:#1a1a2a;border:1px solid #2d2d5a;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
+                id="style-label-literary">
+                <input type="radio" name="prose-style" id="style-literary" value="literary"
+                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:#818cf8;flex-shrink:0;">
+                <span>
+                    <strong style="color:#c7d2fe;">🎭 Literary</strong>
+                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
+                        Staccato fragments. Physical detail as emotion. No adverbs. High atmospheric density.
+                        Best for intense, precise scenes.
+                    </span>
+                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
+                        "She keeps walking. Her thumb traces a slow arc across his knuckles. She doesn't fix it."
+                    </span>
+                </span>
+            </label>
+
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
+                background:#1a2a1a;border:1px solid #2d4a2d;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
+                id="style-label-prose">
+                <input type="radio" name="prose-style" id="style-prose" value="prose"
+                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:var(--success);flex-shrink:0;">
+                <span>
+                    <strong style="color:#86efac;">📖 Prose</strong>
+                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
+                        Flowing narrative paragraphs mixed with dialogue. Familiar and readable.
+                        Best for general roleplay and new users.
+                    </span>
+                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
+                        "Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated — and said nothing about it."
+                    </span>
+                </span>
+            </label>
+
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
+                background:#1a1f2a;border:1px solid #2d3f5a;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
+                id="style-label-dialogue">
+                <input type="radio" name="prose-style" id="style-dialogue" value="dialogue"
+                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:var(--primary);flex-shrink:0;">
+                <span>
+                    <strong style="color:#93c5fd;">💬 Dialogue-Forward</strong>
+                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
+                        Speech-driven exchanges with minimal action beats. Fast-paced back-and-forth.
+                        Best for rapid conversation scenes.
+                    </span>
+                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
+                        "'Greatest negotiation of your career,' she said. 'That's a significant claim.' She glanced sideways. 'I always know.'"
+                    </span>
+                </span>
+            </label>
+
+        </div>
+        <!-- Active style badge -->
+        <div style="margin-top:12px;font-size:.75rem;color:#555;">
+            Active style injected into system prompt: <strong id="style-active-label" style="color:var(--muted);">—</strong>
+        </div>
+    </div>
+
+    <div class="setting-group">
         <div class="toggle-row">
             <label style="margin:0">Include Story Bible in Context</label>
             <input type="checkbox" id="setting-bible-toggle" checked onchange="saveSettings()">
@@ -437,7 +502,7 @@
         <label>Context Window Size (Message Pairs)</label>
         <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
         <span class="range-value" id="ctx-val">15</span>
-        <!-- v1.2.2r: note that Draft Assistant now also respects this setting -->
+        <!-- v1.2.2q: note that Draft Assistant now also respects this setting -->
         <p style="font-size:.74rem;color:#555;margin-top:6px;margin-bottom:0;">
             ℹ️ This setting now applies to both the main chat <strong style="color:var(--muted);">and</strong> the Draft Assistant.
         </p>
@@ -554,6 +619,9 @@
                 <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
                 🎬 Director's Mode Active
                 <button onclick="toggleDirectorPanel()" style="background:none;border:1px solid var(--dir-border);color:var(--dir-text);border-radius:4px;font-size:.68rem;padding:1px 6px;cursor:pointer;margin-left:4px;">✏️ Edit</button>
+            </span>
+            <span id="badge-style" class="badge" style="background:#111827;border:1px solid #374151;color:#9ca3af;font-size:.68rem;">
+                ✍️ Style: <strong id="badge-style-name" style="margin-left:3px;color:#d1d5db;">Literary</strong>
             </span>
         </div>
     </div>
@@ -672,32 +740,28 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.2r
+// RP Companion v1.2.2s
 //
-// CHANGELOG v1.2.2r
+// CHANGELOG v1.2.2s
 // -----------------
-// FEAT: 400-word output limit enforced on both AI #1 (main chat) and
-//       AI #2 (Draft Assistant) via two mechanisms:
+// FEAT: Output Style Selector — three modes injected into the system prompt:
 //
-//   1. SYSTEM PROMPT INSTRUCTION — appended to every system prompt:
-//      "RESPONSE LENGTH: Keep your response under 400 words."
-//      The AI will try to self-limit its narrative output.
+//   🎭 Literary      — Staccato fragments, physical-as-emotion, no adverbs.
+//                      Matches the default Victoria voice register.
+//   📖 Prose         — Flowing narrative + dialogue. Familiar to most users.
+//   💬 Dialogue-Fwd  — Speech-driven, minimal action beats, fast pacing.
 //
-//   2. max_tokens API PARAMETER — hard cap of 600 tokens sent on every
-//      API call (600 tokens ≈ 400 words with headroom for punctuation/
-//      formatting). Prevents the API from returning more even if the AI
-//      ignores the instruction.
+//   Selected style is saved to state.proseStyle and persisted to localStorage.
+//   A style block is appended to every system prompt via constructSystemPrompt().
+//   Active style shown as a badge in the chat header.
+//   Settings UI shows three styled radio cards with live example text.
 //
-// FEAT: Token count badge displayed on every AI reply (main chat and draft).
-//       Shows estimated tokens used (content length / 4, a standard approx).
-//       Badge turns red if response appears to have hit the limit (≥ 580 tokens).
-//
-// AFFECTED FUNCTIONS: constructSystemPrompt(), sendMessage(), generateDraft(),
-//                     renderChat(), buildDraftPanelHTML()
-// NEW HELPERS:        estimateTokens(text), buildTokenBadgeHTML(tokens)
+// AFFECTED FUNCTIONS: constructSystemPrompt(), saveSettings(), initSettings()
+// NEW FUNCTIONS:      onStyleChange(), updateStyleBadge(), getStyleBlock()
+// NEW STATE KEY:      state.proseStyle (default: 'literary')
 // =============================================================================
 
-console.log('RP Companion v1.2.2r loaded');
+console.log('RP Companion v1.2.2s loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -761,7 +825,8 @@ Stay in character at all times. React to body language, tone, and dialogue. If t
     activeChapterId:      null,
     chatHistory:          {},
     directorEnabled:      false,
-    directorInstructions: ''
+    directorInstructions: '',
+    proseStyle:           'literary'
 };
 
 let state = JSON.parse(localStorage.getItem('rp-companion-state'))
@@ -771,6 +836,7 @@ let state = JSON.parse(localStorage.getItem('rp-companion-state'))
 if (state.provider === 'mancer')            { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
 if (state.directorEnabled      == null)     state.directorEnabled      = false;
 if (state.directorInstructions == null)     state.directorInstructions = '';
+if (state.proseStyle           == null)     state.proseStyle           = 'literary';
 
 localStorage.setItem('rp-companion-state', JSON.stringify(state));
 
@@ -807,6 +873,76 @@ function buildTokenBadgeHTML(tokens, cssClass = 'msg-token-badge') {
     const icon = overLimit ? '⚠️' : '🔢';
     const label = overLimit ? `~${tokens} tokens (limit hit)` : `~${tokens} tokens`;
     return `<span class="${cls}">${icon} ${label}</span>`;
+}
+
+// ─────────────────────────────────────────
+// PROSE STYLE SYSTEM
+// Three style blocks injected into every system prompt.
+// Selected via radio buttons in Settings → Output Style.
+// ─────────────────────────────────────────
+const STYLE_BLOCKS = {
+    literary: `
+PROSE STYLE — LITERARY (Staccato / Fragment):
+Write in short, punchy declarative fragments — not flowing sentences.
+Use physical detail as the primary carrier of emotion. Never name the emotion directly.
+No adverbs. No similes. No dialogue tags beyond "she said" or nothing at all.
+Silence, restraint, and pauses carry as much weight as speech.
+Internal monologue is compressed into observation.
+Show the pulse. Show the jaw. Show the hem. Do not explain what they mean.
+EXAMPLE REGISTER: "She keeps walking. Her thumb traces a slow arc across his knuckles. She doesn't fix it."`,
+
+    prose: `
+PROSE STYLE — PROSE (Narrative + Dialogue):
+Write in flowing narrative paragraphs combined naturally with dialogue.
+Use complete sentences with clear cause and effect. Emotions may be named sparingly.
+Balance action beats, internal reaction, and spoken exchange.
+Avoid purple prose — keep descriptions purposeful. Dialogue tags are acceptable.
+EXAMPLE REGISTER: "Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated — and said nothing about it. 'Greatest negotiation of your career,' she repeated, her voice warm."`,
+
+    dialogue: `
+PROSE STYLE — DIALOGUE-FORWARD:
+Prioritise spoken exchange above all else. Keep action beats minimal — one short beat per 2-3 lines of dialogue at most.
+Move the scene through what characters say and how they say it.
+Avoid internal monologue. Let subtext live in the dialogue itself.
+Fast-paced. Punchy. Reads almost like a screenplay.
+EXAMPLE REGISTER: "'Greatest negotiation of your career,' she said. 'That's a significant claim.' She glanced sideways. 'I always know.' A beat. 'I put it on anyway.'"`,
+};
+
+const STYLE_LABELS = {
+    literary:  '🎭 Literary',
+    prose:     '📖 Prose',
+    dialogue:  '💬 Dialogue-Fwd',
+};
+
+function getStyleBlock() {
+    return STYLE_BLOCKS[state.proseStyle] || STYLE_BLOCKS.literary;
+}
+
+function updateStyleBadge() {
+    const label = STYLE_LABELS[state.proseStyle] || '🎭 Literary';
+    const badgeEl = document.getElementById('badge-style-name');
+    if (badgeEl) badgeEl.innerText = label;
+    const activeEl = document.getElementById('style-active-label');
+    if (activeEl) activeEl.innerText = label;
+
+    // Highlight selected radio card border
+    ['literary','prose','dialogue'].forEach(s => {
+        const el = document.getElementById(`style-label-${s}`);
+        if (!el) return;
+        const borders = { literary:'#2d2d5a', prose:'#2d4a2d', dialogue:'#2d3f5a' };
+        const active  = { literary:'#818cf8', prose:'#22c55e', dialogue:'#3b82f6' };
+        el.style.borderColor = (s === state.proseStyle) ? active[s] : borders[s];
+    });
+}
+
+function onStyleChange() {
+    const sel = document.querySelector('input[name="prose-style"]:checked');
+    if (sel) {
+        state.proseStyle = sel.value;
+        saveState();
+        updateStyleBadge();
+        showToast(`Style set to ${STYLE_LABELS[state.proseStyle]}`);
+    }
 }
 
 // ─────────────────────────────────────────
@@ -918,6 +1054,7 @@ ${state.directorInstructions}
         .replace('{{bible}}',    bible)
         .replace('{{summary}}',  summary)
         .replace('{{director}}', directorBlock)
+        + getStyleBlock()
         + `\n\nRESPONSE LENGTH: Keep your response under ${MAX_WORDS} words.`;
 }
 
@@ -933,6 +1070,8 @@ function saveSettings() {
     state.systemTemplate = document.getElementById('setting-sys-template').value;
     state.bibleToggle    = document.getElementById('setting-bible-toggle').checked;
     state.contextWindow  = parseInt(document.getElementById('setting-context').value);
+    const styleSel       = document.querySelector('input[name="prose-style"]:checked');
+    if (styleSel) state.proseStyle = styleSel.value;
     saveState();
 }
 
@@ -963,6 +1102,12 @@ function initSettings() {
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle !== false;
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
     document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
+
+    // Load prose style radio
+    const styleVal = state.proseStyle || 'literary';
+    const styleRadio = document.getElementById(`style-${styleVal}`);
+    if (styleRadio) styleRadio.checked = true;
+    updateStyleBadge();
 
     const isFirstRun = !state.provider || !state.model;
     document.getElementById('first-run-banner').classList.toggle('hidden', !isFirstRun);
@@ -1571,9 +1716,10 @@ function restoreStateJSON(event) {
             if (state.provider === 'mancer')       { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
             if (state.directorEnabled      == null) state.directorEnabled      = false;
             if (state.directorInstructions == null) state.directorInstructions = '';
+            if (state.proseStyle           == null) state.proseStyle           = 'literary';
             localStorage.setItem('rp-companion-state', JSON.stringify(state));
             initSettings(); initBible(); initCharacters(); initChapters();
-            applyDirectorUI(); updateCharBadge(); renderChat();
+            applyDirectorUI(); updateCharBadge(); updateStyleBadge(); renderChat();
             document.getElementById('restore-file-input').value = '';
             showToast('Backup restored!'); navTo('chat');
         } catch(err) {
