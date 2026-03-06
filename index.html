@@ -37,7 +37,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg); color: var(--primary-text);
             height: 100vh;
-            height: 100dvh;
+            height: 100dvh; /* dynamic viewport — accounts for Android keyboard */
             display: flex; flex-direction: column; overflow: hidden;
         }
 
@@ -57,7 +57,7 @@
             display: flex; justify-content: space-around; align-items: center; z-index: 100;
             transition: transform .15s ease;
         }
-        nav.keyboard-open { transform: translateY(100%); }
+        nav.keyboard-open { transform: translateY(100%); } /* hide nav when keyboard open */
         .nav-btn {
             background: none; border: none; color: var(--muted);
             font-size: .75rem; display: flex; flex-direction: column;
@@ -110,6 +110,7 @@
             display: none; flex-direction: column;
             height: 100vh; height: 100dvh;
             padding: 0; overflow: hidden;
+            /* Android keyboard fix: allow entire chat to shrink with viewport */
             min-height: 0;
         }
         #view-chat.active { display: flex; }
@@ -119,6 +120,7 @@
         .chat-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .chat-header-title { font-size: 1rem; font-weight: 700; }
         .chat-header-buttons { display: flex; gap: 6px; align-items: center; }
+        /* Persistent badges row */
         .chat-header-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .badge {
             display: inline-flex; align-items: center; gap: 5px;
@@ -130,6 +132,7 @@
         .badge-director svg { width: 11px; height: 11px; fill: var(--dir-text); }
         .badge.hidden { display: none !important; }
 
+        /* Director Mode toggle button */
         .btn-toggle-dir {
             background: transparent; border: 1px solid #555; color: #999;
             padding: 5px 11px; border-radius: 6px; font-size: .78rem;
@@ -141,6 +144,7 @@
         .director-panel {
             background: var(--dir-panel); border-bottom: 2px solid var(--dir-border);
             padding: 12px 15px; flex-shrink: 0;
+            /* Android: cap height so panel doesn't fill screen when keyboard opens */
             max-height: 40dvh;
             max-height: 40vh;
             overflow-y: auto;
@@ -195,10 +199,10 @@
             flex: 1; margin-bottom: 0; resize: none;
             min-height: 56px; max-height: 160px;
             overflow-y: auto; line-height: 1.5;
-            font-size: 16px;
+            font-size: 16px; /* prevents iOS zoom on focus */
             padding: 10px 12px;
             border-radius: 10px;
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
         }
         #send-btn {
             height: 56px; width: 56px; min-width: 56px;
@@ -237,16 +241,6 @@
         .btn-copy-msg svg { width: 12px; height: 12px; fill: currentColor; }
         .btn-copy-msg.copied { color: var(--success); }
 
-        /* ── TOKEN / WORD COUNT BADGE ── */
-        .msg-token-badge {
-            font-size: .64rem; color: #4a4a6a;
-            background: #1a1a2e; border: 1px solid #2a2a4a;
-            border-radius: 10px; padding: 1px 7px;
-            display: inline-flex; align-items: center; gap: 3px;
-            white-space: nowrap;
-        }
-        .msg-token-badge.over-limit { color: #f87171; border-color: #7f1d1d; background: #1f0f0f; }
-
         /* ── DRAFT ASSISTANT ── */
         .draft-panel {
             align-self: flex-start; width: 85%; margin-top: -8px;
@@ -258,7 +252,7 @@
         .draft-guidance {
             width: 100%; background: #151c33; border: 1px solid #2d3f6e;
             color: #c7d2fe; padding: 8px 10px; border-radius: 5px;
-            font-size: 16px;
+            font-size: 16px; /* prevents iOS zoom */
             margin-bottom: 7px; resize: vertical;
             min-height: 70px; max-height: 200px;
             font-family: inherit; line-height: 1.5;
@@ -292,14 +286,6 @@
         .btn-draft-trigger:hover { background: #0f1629; border-color: #818cf8; }
         .btn-draft-trigger svg { width: 11px; height: 11px; fill: currentColor; }
         .draft-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(129,140,248,.2); border-top-color: #818cf8; border-radius: 50%; animation: spin 1s linear infinite; }
-        .draft-token-badge {
-            font-size: .64rem; color: #4a4a6a;
-            background: #0f0f1e; border: 1px solid #2a2a4a;
-            border-radius: 10px; padding: 1px 7px;
-            display: inline-flex; align-items: center; gap: 3px;
-            margin-top: 5px; white-space: nowrap;
-        }
-        .draft-token-badge.over-limit { color: #f87171; border-color: #7f1d1d; background: #1f0f0f; }
 
         /* ── MISC ── */
         .hidden { display: none !important; }
@@ -318,9 +304,9 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2t)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2p)</span></h2>
 
-    <!-- ── First-run banner ── -->
+    <!-- ── First-run banner — shown only when provider/model not yet configured ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-size:.95rem;font-weight:700;color:var(--primary);margin-bottom:6px;">👋 Welcome to RP Companion!</div>
         <p style="font-size:.82rem;color:var(--muted);margin:0 0 10px 0;">
@@ -362,6 +348,7 @@
         <div style="background:#1a1a2a;padding:12px;border-radius:6px;border:1px solid #2d2d5a;">
             <div style="font-size:.85rem;font-weight:700;color:#818cf8;margin-bottom:10px;">✍️ AI #2 — Draft Assistant</div>
 
+            <!-- Key Source toggle -->
             <label style="font-size:.8rem;margin-bottom:8px;">Key Source</label>
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:.85rem;color:var(--primary-text);">
@@ -382,6 +369,7 @@
                 </label>
             </div>
 
+            <!-- BYOK fields — hidden when server key selected -->
             <div id="byok-fields">
                 <label style="font-size:.8rem;">API Provider</label>
                 <select id="byok-provider" onchange="onByokProviderChange()">
@@ -410,6 +398,7 @@
                 </div>
             </div>
 
+            <!-- Server key notice — shown when server selected -->
             <div id="byok-server-notice" style="display:none;background:#1a2a1a;padding:8px 10px;border-radius:5px;border:1px solid #2d5a2d;">
                 <p style="font-size:.75rem;color:var(--success);margin:0;">
                     ✅ Server key will be used for Draft Assistant.<br>
@@ -430,71 +419,6 @@
     </div>
 
     <div class="setting-group">
-        <h3>🎭 Output Style</h3>
-        <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
-            Controls how the AI structures its replies. Applied to every response automatically.
-        </p>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-
-            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
-                background:#1a1a2a;border:1px solid #2d2d5a;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
-                id="style-label-literary">
-                <input type="radio" name="prose-style" id="style-literary" value="literary"
-                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:#818cf8;flex-shrink:0;">
-                <span>
-                    <strong style="color:#c7d2fe;">🎭 Literary</strong>
-                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
-                        Staccato fragments. Physical detail as emotion. No adverbs. High atmospheric density.
-                        Best for intense, precise scenes.
-                    </span>
-                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
-                        "She keeps walking. Her thumb traces a slow arc across his knuckles. She doesn't fix it."
-                    </span>
-                </span>
-            </label>
-
-            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
-                background:#1a2a1a;border:1px solid #2d4a2d;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
-                id="style-label-prose">
-                <input type="radio" name="prose-style" id="style-prose" value="prose"
-                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:var(--success);flex-shrink:0;">
-                <span>
-                    <strong style="color:#86efac;">📖 Prose</strong>
-                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
-                        Flowing narrative paragraphs mixed with dialogue. Familiar and readable.
-                        Best for general roleplay and new users.
-                    </span>
-                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
-                        "Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated — and said nothing about it."
-                    </span>
-                </span>
-            </label>
-
-            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0;
-                background:#1a1f2a;border:1px solid #2d3f5a;border-radius:8px;padding:10px 12px;transition:border-color .2s;"
-                id="style-label-dialogue">
-                <input type="radio" name="prose-style" id="style-dialogue" value="dialogue"
-                    onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:var(--primary);flex-shrink:0;">
-                <span>
-                    <strong style="color:#93c5fd;">💬 Dialogue-Forward</strong>
-                    <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
-                        Speech-driven exchanges with minimal action beats. Fast-paced back-and-forth.
-                        Best for rapid conversation scenes.
-                    </span>
-                    <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
-                        "'Greatest negotiation of your career,' she said. 'That's a significant claim.' She glanced sideways. 'I always know.'"
-                    </span>
-                </span>
-            </label>
-
-        </div>
-        <!-- Active style badge -->
-        <div style="margin-top:12px;font-size:.75rem;color:#555;">
-            Active style injected into system prompt: <strong id="style-active-label" style="color:var(--muted);">—</strong>
-        </div>
-    </div>
-
-    <div class="setting-group">
         <div class="toggle-row">
             <label style="margin:0">Include Story Bible in Context</label>
             <input type="checkbox" id="setting-bible-toggle" checked onchange="saveSettings()">
@@ -502,16 +426,12 @@
         <label>Context Window Size (Message Pairs)</label>
         <input type="range" id="setting-context" min="5" max="50" step="5" value="15" oninput="updateRangeValue()">
         <span class="range-value" id="ctx-val">15</span>
-        <!-- v1.2.2q: note that Draft Assistant now also respects this setting -->
-        <p style="font-size:.74rem;color:#555;margin-top:6px;margin-bottom:0;">
-            ℹ️ This setting now applies to both the main chat <strong style="color:var(--muted);">and</strong> the Draft Assistant.
-        </p>
     </div>
 
     <div class="setting-group">
         <h3>System Prompt Template</h3>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">
-            Tags: <code>{{char}}</code> <code>{{bible}}</code> <code>{{summary}}</code> <code>{{director}}</code> <code>{{style}}</code>
+            Tags: <code>{{char}}</code> <code>{{bible}}</code> <code>{{summary}}</code> <code>{{director}}</code>
         </p>
         <textarea id="setting-sys-template" rows="10" style="font-family:monospace;font-size:.8rem;white-space:pre;" oninput="debounceSaveSettings()"></textarea>
         <button class="btn btn-secondary btn-small" onclick="resetSystemTemplate()">Reset to Default</button>
@@ -573,6 +493,7 @@
     </div>
     <div class="chapter-nav" id="chapter-tabs"></div>
 
+    <!-- Active chapter indicator — always visible above editor -->
     <div id="active-chapter-indicator" style="background:#1a2a1a;border:1px solid #2d5a2d;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:.8rem;color:var(--success);display:flex;align-items:center;gap:6px;">
         <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:var(--success);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
         <span>AI is using: <strong id="active-chapter-name" style="color:white;">—</strong></span>
@@ -596,6 +517,7 @@
 ══════════════════════════════ -->
 <main id="view-chat" class="view">
 
+    <!-- HEADER with persistent indicators -->
     <div class="chat-header">
         <div class="chat-header-row">
             <span class="chat-header-title" id="chat-active-name">No Character Selected</span>
@@ -606,6 +528,7 @@
                 <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">🗑 Clear Chat</button>
             </div>
         </div>
+        <!-- Always-visible status badges -->
         <div class="chat-header-badges">
             <span class="badge badge-char">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -620,13 +543,10 @@
                 🎬 Director's Mode Active
                 <button onclick="toggleDirectorPanel()" style="background:none;border:1px solid var(--dir-border);color:var(--dir-text);border-radius:4px;font-size:.68rem;padding:1px 6px;cursor:pointer;margin-left:4px;">✏️ Edit</button>
             </span>
-            <span id="badge-style" class="badge" style="background:#111827;border:1px solid #374151;color:#9ca3af;font-size:.68rem;">
-                ✍️ Style: <strong id="badge-style-name" style="margin-left:3px;color:#d1d5db;">Literary</strong>
-            </span>
         </div>
     </div>
 
-    <!-- DIRECTOR PANEL -->
+    <!-- DIRECTOR PANEL — separate input, never appears in chat -->
     <div id="director-panel" class="director-panel hidden">
         <div class="director-panel-header">
             <span class="director-panel-title">
@@ -739,44 +659,7 @@
      JAVASCRIPT
 ══════════════════════════════ -->
 <script>
-// =============================================================================
-// RP Companion v1.2.2t
-//
-// CHANGELOG v1.2.2t
-// -----------------
-// FIX: Style selector now works correctly for all three modes (Literary,
-//      Prose, Dialogue-Forward) by replacing the append-at-end approach
-//      with a proper {{style}} tag injected at the right position inside
-//      the system prompt template — identical to how {{director}} works.
-//
-// ROOT CAUSE (v1.2.2s bug):
-//   The style block was appended AFTER the template. But the template
-//   already contained a hardcoded "Formatting Rule: Use parentheses..."
-//   instruction which was earlier, more specific, and therefore dominant.
-//   The AI always followed the template rule and ignored the appended style.
-//
-// THE FIX — two-part:
-//   1. DEFAULT TEMPLATE: Removed the hardcoded Formatting Rule and replaced
-//      it with a {{style}} tag at the correct position (inside OUTPUT STRUCTURE,
-//      before ACTIVE CHARACTER VOICE). The style block now has full authority.
-//
-//   2. STYLE BLOCKS — upgraded with explicit override language:
-//      - Literary:  Keeps the parentheses convention + staccato rules
-//      - Prose:     Explicitly countermands parentheses formatting
-//      - Dialogue:  Explicitly countermands parentheses + action beats
-//      This ensures the selector works even on customised user templates
-//      that still contain old formatting rules.
-//
-//   3. constructSystemPrompt(): Now replaces {{style}} tag inline instead
-//      of appending. Falls back to literary block if tag is missing.
-//
-// AFFECTED: defaultState.systemTemplate, constructSystemPrompt(),
-//           STYLE_BLOCKS{} (all three blocks strengthened)
-// NEW TAG:  {{style}} — listed in Settings → System Prompt Template hints
-// VERSION:  v1.2.2s → v1.2.2t
-// =============================================================================
-
-console.log('RP Companion v1.2.2t loaded');
+console.log('RP Companion v1.2.2p loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -801,8 +684,8 @@ Maintain a Strict Boundary. Never write dialogue, thoughts, or actions for the U
 
 OUTPUT STRUCTURE
 Do not skip internal thinking — it produces higher quality responses. But the final output must contain only the roleplay text. Keep the narrative natural, visceral, and immersive.
-
-{{style}}
+Formatting Rule: Use "Quotation marks" for spoken dialogue. Place all visual cues, physical actions, and internal monologue inside (parentheses).
+Example: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."
 
 ACTIVE CHARACTER VOICE — CRITICAL
 {{char}} must never be passive or merely reactive. She must:
@@ -840,8 +723,7 @@ Stay in character at all times. React to body language, tone, and dialogue. If t
     activeChapterId:      null,
     chatHistory:          {},
     directorEnabled:      false,
-    directorInstructions: '',
-    proseStyle:           'literary'
+    directorInstructions: ''
 };
 
 let state = JSON.parse(localStorage.getItem('rp-companion-state'))
@@ -851,7 +733,6 @@ let state = JSON.parse(localStorage.getItem('rp-companion-state'))
 if (state.provider === 'mancer')            { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
 if (state.directorEnabled      == null)     state.directorEnabled      = false;
 if (state.directorInstructions == null)     state.directorInstructions = '';
-if (state.proseStyle           == null)     state.proseStyle           = 'literary';
 
 localStorage.setItem('rp-companion-state', JSON.stringify(state));
 
@@ -870,108 +751,6 @@ function generateId() { return Date.now().toString(36) + Math.random().toString(
 function saveState()   { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
 
 // ─────────────────────────────────────────
-// TOKEN HELPERS
-// estimateTokens: ~4 chars per token (standard approximation)
-// MAX_TOKENS: hard API cap sent with every request
-// MAX_WORDS:  instruction added to system prompt
-// ─────────────────────────────────────────
-const MAX_TOKENS = 600;   // hard API cap  (≈ 400 words + headroom)
-const MAX_WORDS  = 400;   // system prompt instruction
-
-function estimateTokens(text) {
-    return Math.round((text || '').length / 4);
-}
-
-function buildTokenBadgeHTML(tokens, cssClass = 'msg-token-badge') {
-    const overLimit = tokens >= 580;
-    const cls = overLimit ? `${cssClass} over-limit` : cssClass;
-    const icon = overLimit ? '⚠️' : '🔢';
-    const label = overLimit ? `~${tokens} tokens (limit hit)` : `~${tokens} tokens`;
-    return `<span class="${cls}">${icon} ${label}</span>`;
-}
-
-// ─────────────────────────────────────────
-// PROSE STYLE SYSTEM
-// Three style blocks injected into every system prompt.
-// Selected via radio buttons in Settings → Output Style.
-// ─────────────────────────────────────────
-const STYLE_BLOCKS = {
-
-    literary: `FORMATTING RULE — LITERARY (Staccato / Fragment):
-This rule overrides any prior formatting instructions in this prompt.
-Use "Quotation marks" for spoken dialogue only.
-Place all visual cues, physical actions, and internal monologue inside (parentheses).
-Example: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."
-Write in short, punchy declarative fragments — not flowing sentences.
-Use physical detail as the primary carrier of emotion. Never name the emotion directly.
-No adverbs. No similes. No dialogue tags beyond "she said" or nothing at all.
-Silence, restraint, and pauses carry as much weight as speech.
-Internal monologue is compressed into observation — show the pulse, the jaw, the hem. Do not explain what they mean.
-REGISTER EXAMPLE: (She keeps walking. Her thumb traces a slow arc across his knuckles.) "I always know." (She doesn't fix it.)`,
-
-    prose: `FORMATTING RULE — PROSE (Narrative + Dialogue):
-This rule overrides any prior formatting instructions in this prompt.
-Do NOT use parentheses for action beats or internal monologue.
-Do NOT write in short fragments. Write in complete, flowing sentences.
-Weave action, internal reaction, and dialogue into natural narrative paragraphs.
-Use complete sentences with clear cause and effect. Emotions may be named sparingly.
-Balance action beats, internal thought, and spoken exchange in each paragraph.
-Avoid purple prose — keep descriptions purposeful. Standard dialogue tags are acceptable.
-Do not italicise or bracket anything — everything flows as continuous narrative prose.
-REGISTER EXAMPLE: Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated, rapid — and said nothing about it. "Greatest negotiation of your career," she repeated, her voice warm and unhurried.`,
-
-    dialogue: `FORMATTING RULE — DIALOGUE-FORWARD:
-This rule overrides any prior formatting instructions in this prompt.
-Do NOT use parentheses for action beats or internal monologue.
-Do NOT write extended narrative passages or internal reflection.
-Prioritise spoken exchange above everything else.
-Keep action beats minimal — maximum one short beat per 2-3 lines of dialogue.
-Move the scene entirely through what characters say and how they say it.
-Subtext lives in the dialogue itself — do not explain it in action or thought.
-Fast-paced. Punchy. Reads almost like a screenplay or stage play.
-Standard quotation marks for dialogue. Action beats as brief italics or plain text — never parentheses.
-REGISTER EXAMPLE: "Greatest negotiation of your career," she said. "That's a significant claim." She glanced sideways at him. "I always know." A beat. "I put it on anyway. Because you asked."`,
-
-};
-
-const STYLE_LABELS = {
-    literary:  '🎭 Literary',
-    prose:     '📖 Prose',
-    dialogue:  '💬 Dialogue-Fwd',
-};
-
-function getStyleBlock() {
-    return STYLE_BLOCKS[state.proseStyle] || STYLE_BLOCKS.literary;
-}
-
-function updateStyleBadge() {
-    const label = STYLE_LABELS[state.proseStyle] || '🎭 Literary';
-    const badgeEl = document.getElementById('badge-style-name');
-    if (badgeEl) badgeEl.innerText = label;
-    const activeEl = document.getElementById('style-active-label');
-    if (activeEl) activeEl.innerText = label;
-
-    // Highlight selected radio card border
-    ['literary','prose','dialogue'].forEach(s => {
-        const el = document.getElementById(`style-label-${s}`);
-        if (!el) return;
-        const borders = { literary:'#2d2d5a', prose:'#2d4a2d', dialogue:'#2d3f5a' };
-        const active  = { literary:'#818cf8', prose:'#22c55e', dialogue:'#3b82f6' };
-        el.style.borderColor = (s === state.proseStyle) ? active[s] : borders[s];
-    });
-}
-
-function onStyleChange() {
-    const sel = document.querySelector('input[name="prose-style"]:checked');
-    if (sel) {
-        state.proseStyle = sel.value;
-        saveState();
-        updateStyleBadge();
-        showToast(`Style set to ${STYLE_LABELS[state.proseStyle]}`);
-    }
-}
-
-// ─────────────────────────────────────────
 // NAV
 // ─────────────────────────────────────────
 function navTo(viewId) {
@@ -980,9 +759,11 @@ function navTo(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
 
+    // Always restore nav bar when switching tabs — keyboard should be dismissed
     const navBar = document.querySelector('nav');
     if (navBar) navBar.classList.remove('keyboard-open');
 
+    // Reset chat view height when leaving chat so other views aren't constrained
     if (viewId !== 'chat') {
         const chatView = document.getElementById('view-chat');
         if (chatView) chatView.style.height = '';
@@ -994,6 +775,11 @@ function navTo(viewId) {
 // ─────────────────────────────────────────
 // DIRECTOR'S MODE
 // ─────────────────────────────────────────
+
+/**
+ * Toggle Director's Mode on/off.
+ * State is persisted to localStorage so it survives page reload.
+ */
 function toggleDirectorMode() {
     state.directorEnabled = !state.directorEnabled;
     saveState();
@@ -1001,6 +787,10 @@ function toggleDirectorMode() {
     showToast(state.directorEnabled ? "Director's Mode ON" : "Director's Mode OFF");
 }
 
+/**
+ * Sync UI to current state.directorEnabled value.
+ * Called on init, toggle, and restore.
+ */
 function applyDirectorUI() {
     const on    = state.directorEnabled;
     const btn   = document.getElementById('btn-toggle-director');
@@ -1014,29 +804,39 @@ function applyDirectorUI() {
     badge.classList.toggle('hidden', !on);
 
     if (on) {
+        // Populate panel with saved instructions
         document.getElementById('director-instructions').value = state.directorInstructions || '';
     }
 }
 
+/** Toggle just the panel visibility — mode stays ON */
 function toggleDirectorPanel() {
     const panel = document.getElementById('director-panel');
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
+        // Repopulate with current saved instructions when reopening
         document.getElementById('director-instructions').value = state.directorInstructions || '';
     }
 }
 
+/** Auto-save director instructions 1.5s after user stops typing. */
 function directorTyping() {
     clearTimeout(dirTypingTimer);
     dirTypingTimer = setTimeout(() => saveDirectorInstructions(true), 1500);
 }
 
+/**
+ * Save director instructions to state.
+ * silent=true = auto-save (no flash, no collapse).
+ * silent=false = button click (flash "Applied ✓" then collapse panel).
+ */
 function saveDirectorInstructions(silent = false) {
     state.directorInstructions = (document.getElementById('director-instructions').value || '').trim();
     saveState();
     if (!silent) {
         const el = document.getElementById('dir-save-status');
         el.classList.add('show');
+        // Collapse panel 1s after Apply so user sees the "Applied ✓" confirmation
         setTimeout(() => {
             el.classList.remove('show');
             document.getElementById('director-panel').classList.add('hidden');
@@ -1044,6 +844,7 @@ function saveDirectorInstructions(silent = false) {
     }
 }
 
+/** Clear director instructions panel and state. */
 function clearDirectorInstructions() {
     document.getElementById('director-instructions').value = '';
     state.directorInstructions = '';
@@ -1053,6 +854,8 @@ function clearDirectorInstructions() {
 
 // ─────────────────────────────────────────
 // SYSTEM PROMPT
+// Director block is injected via {{director}} tag.
+// When mode is OFF the tag is replaced with an empty string — clean removal.
 // ─────────────────────────────────────────
 function constructSystemPrompt() {
     const char     = state.characters.find(c => c.id === state.activeCharId);
@@ -1071,28 +874,16 @@ ${state.directorInstructions}
 ---`;
     }
 
+    // ── DEBUG LOG — visible in browser console (F12) ──
     console.log('🎬 Director enabled:', state.directorEnabled);
     console.log('🎬 Director instructions:', JSON.stringify(state.directorInstructions));
     console.log('🎬 Director block injected:', directorBlock ? 'YES' : 'NO — empty or mode off');
-    console.log('✍️ Prose style:', state.proseStyle);
 
-    const styleBlock = getStyleBlock();
-    const template   = state.systemTemplate || defaultState.systemTemplate;
-
-    // Replace {{style}} inline if present (v1.2.2t — proper tag injection).
-    // If the tag is missing (user has old/custom template), append as fallback
-    // so the style selector never silently stops working.
-    const hasStyleTag = template.includes('{{style}}');
-    const rendered = template
+    return (state.systemTemplate || defaultState.systemTemplate)
         .replace('{{char}}',     charDesc)
         .replace('{{bible}}',    bible)
         .replace('{{summary}}',  summary)
-        .replace('{{director}}', directorBlock)
-        .replace('{{style}}',    styleBlock);
-
-    return rendered
-        + (hasStyleTag ? '' : '\n\n' + styleBlock)
-        + `\n\nRESPONSE LENGTH: Keep your response under ${MAX_WORDS} words.`;
+        .replace('{{director}}', directorBlock);
 }
 
 // ─────────────────────────────────────────
@@ -1107,8 +898,6 @@ function saveSettings() {
     state.systemTemplate = document.getElementById('setting-sys-template').value;
     state.bibleToggle    = document.getElementById('setting-bible-toggle').checked;
     state.contextWindow  = parseInt(document.getElementById('setting-context').value);
-    const styleSel       = document.querySelector('input[name="prose-style"]:checked');
-    if (styleSel) state.proseStyle = styleSel.value;
     saveState();
 }
 
@@ -1130,6 +919,7 @@ function initSettings() {
             state.provider === 'custom' ? '' : state.provider;
         document.getElementById('custom-provider-row').classList.remove('hidden');
     } else {
+        // No provider set — leave dropdown at default first option (openrouter)
         sel.value = 'openrouter';
         document.getElementById('custom-provider-row').classList.add('hidden');
     }
@@ -1140,12 +930,7 @@ function initSettings() {
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
     document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
 
-    // Load prose style radio
-    const styleVal = state.proseStyle || 'literary';
-    const styleRadio = document.getElementById(`style-${styleVal}`);
-    if (styleRadio) styleRadio.checked = true;
-    updateStyleBadge();
-
+    // Show first-run banner if provider or model not yet configured
     const isFirstRun = !state.provider || !state.model;
     document.getElementById('first-run-banner').classList.toggle('hidden', !isFirstRun);
 }
@@ -1269,6 +1054,10 @@ function selectCharacter(id) {
     saveState(); renderCharacterList(); updateCharBadge(); navTo('chat');
 }
 
+/**
+ * Keep the Active Character badge + header title in sync.
+ * Called on select, render, init, and restore.
+ */
 function updateCharBadge() {
     const char = state.characters.find(c => c.id === state.activeCharId);
     const name = char ? char.name : 'None';
@@ -1311,9 +1100,11 @@ function loadChapter(id) {
     document.getElementById('chapter-notes').value   = ch.notes;
     if (!state.chatHistory[id]) state.chatHistory[id] = [];
 
+    // ── Update active chapter indicator in Chapters view ──
     const nameEl = document.getElementById('active-chapter-name');
     if (nameEl) nameEl.innerText = ch.title || 'Untitled';
 
+    // ── Update active chapter badge in Chat header ──
     const chatBadgeEl = document.getElementById('badge-chapter-name');
     if (chatBadgeEl) chatBadgeEl.innerText = ch.title || 'Untitled';
 
@@ -1350,6 +1141,7 @@ function renderChat() {
     const atBottom  = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
     updateCharBadge();
 
+    // Sync active chapter badge
     const activeCh     = state.chapters.find(c => c.id === state.activeChapterId);
     const chapterBadge = document.getElementById('badge-chapter-name');
     if (chapterBadge) chapterBadge.innerText = activeCh ? (activeCh.title || 'Untitled') : 'None';
@@ -1369,31 +1161,29 @@ function renderChat() {
         const isUser = msg.role === 'user';
         const msgNum = idx + 1;
 
+        // Wrapper
         const wrap = document.createElement('div');
         wrap.className = `msg-wrap ${isUser ? 'user-wrap' : 'ai-wrap'}`;
 
+        // Bubble
         const bubble = document.createElement('div');
         bubble.className = `msg ${isUser ? 'msg-user' : 'msg-ai'}`;
         bubble.innerText = msg.content;
 
+        // Meta row (number + copy button)
         const meta = document.createElement('div');
         meta.className = 'msg-meta';
-
-        // Token badge — shown on AI messages only
-        const tokenBadgeHTML = !isUser
-            ? buildTokenBadgeHTML(estimateTokens(msg.content))
-            : '';
-
         meta.innerHTML = `
             <span class="msg-num">#${msgNum}</span>
             <button class="btn-copy-msg" title="Copy message #${msgNum}" onclick="copyMsg(this, ${idx})">
                 <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                 Copy
-            </button>${tokenBadgeHTML}`;
+            </button>`;
 
         wrap.appendChild(bubble);
         wrap.appendChild(meta);
 
+        // Draft trigger button — only on AI (Victoria) messages
         if (!isUser) {
             const draftTrigger = document.createElement('button');
             draftTrigger.className = 'btn-draft-trigger';
@@ -1405,6 +1195,7 @@ function renderChat() {
             draftTrigger.onclick = () => openDraftPanel(idx);
             wrap.appendChild(draftTrigger);
 
+            // Draft panel placeholder (hidden until opened)
             const draftPanel = document.createElement('div');
             draftPanel.className = 'draft-panel';
             draftPanel.id = `draft-panel-${idx}`;
@@ -1425,6 +1216,7 @@ function clearChatHistory() {
     }
 }
 
+/** Copy a specific message by index. Shows brief "Copied!" feedback on the button. */
 function copyMsg(btn, idx) {
     const msgs = state.chatHistory[state.activeChapterId] || [];
     const text = msgs[idx] ? msgs[idx].content : '';
@@ -1441,7 +1233,10 @@ function copyMsg(btn, idx) {
 
 // ─────────────────────────────────────────
 // BYOK — Bring Your Own Key
+// Stored separately in localStorage under 'rp-byok'
+// Never included in main state backup
 // ─────────────────────────────────────────
+
 const BYOK_MODEL_HINTS = {
     openrouter: 'e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>',
     anthropic:  'e.g. <code>claude-sonnet-4-6</code> or <code>claude-haiku-4-5-20251001</code>',
@@ -1457,10 +1252,12 @@ const BYOK_MODEL_DEFAULTS = {
 function loadBYOK() {
     const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
 
+    // Key source radio — default to 'server' for ease of testing
     const source = byok.keySource || 'server';
     const radio  = document.getElementById(source === 'server' ? 'draft-use-server' : 'draft-use-byok');
     if (radio) radio.checked = true;
 
+    // Provider, model, key
     const providerEl = document.getElementById('byok-provider');
     if (providerEl) providerEl.value = byok.provider || 'openrouter';
     const modelEl = document.getElementById('byok-model');
@@ -1544,7 +1341,11 @@ function getBYOK() {
 // ─────────────────────────────────────────
 // DRAFT ASSISTANT — AI #2
 // ─────────────────────────────────────────
+
+/** Build the inner HTML of a draft panel for a given AI message index */
 function buildDraftPanelHTML(idx) {
+    // Find non-Victoria characters for the "draft as" selector
+    const char    = state.characters.find(c => c.id === state.activeCharId);
     const others  = state.characters.filter(c => c.id !== state.activeCharId);
     const options = others.map(c =>
         `<option value="${c.id}">${c.name}</option>`
@@ -1575,20 +1376,24 @@ function buildDraftPanelHTML(idx) {
             </button>
         </div>
         <p style="font-size:.68rem;color:#3d4f7a;margin:6px 0 0 0;">
-            AI #2 drafts as the selected character using the last ${state.contextWindow} message pairs for context (matches your Context Window setting).
+            AI #2 drafts as the selected character using full chat history for context.
+            Director's Mode and Author's Notes are excluded by design.
         </p>`;
 }
 
+/** Open draft panel, close others */
 function openDraftPanel(idx) {
     const byok   = getBYOK();
     const source = byok.keySource || 'byok';
 
+    // If BYOK mode but no key, redirect to settings
     if (source === 'byok' && !byok.key) {
         showToast('Add your API key in Settings → Draft Assistant to use this feature');
         navTo('settings');
         return;
     }
 
+    // Close any other open panels
     document.querySelectorAll('.draft-panel').forEach(p => { p.style.display = 'none'; });
     document.querySelectorAll('.btn-draft-trigger').forEach(b => { b.style.display = 'inline-flex'; });
 
@@ -1598,11 +1403,7 @@ function openDraftPanel(idx) {
     if (trigger) { trigger.style.display = 'none'; }
 }
 
-// ─────────────────────────────────────────
-// generateDraft — v1.2.2q FIX
-// Previously sent ALL chat history (msgs.map(...)) which caused token-limit
-// errors on long sessions. Now trims to the same context window as main chat.
-// ─────────────────────────────────────────
+/** Call /api/draft — uses BYOK key or null (server key) depending on user setting */
 async function generateDraft(idx) {
     const byok       = getBYOK();
     const source     = byok.keySource || 'byok';
@@ -1632,9 +1433,9 @@ async function generateDraft(idx) {
     if (sendBtn) { sendBtn.style.display = 'none'; }
     if (copyBtn) { copyBtn.style.display = 'none'; }
 
-    const msgs     = state.chatHistory[state.activeChapterId] || [];
-    const provider = source === 'server' ? state.provider : (byok.provider || 'openrouter');
-    const model    = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
+    const msgs      = state.chatHistory[state.activeChapterId] || [];
+    const provider  = source === 'server' ? state.provider : (byok.provider || 'openrouter');
+    const model     = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
 
     try {
         const activeChar = state.characters.find(c => c.id === state.activeCharId);
@@ -1644,32 +1445,22 @@ async function generateDraft(idx) {
             body: JSON.stringify({
                 provider,
                 model,
-                // ── v1.2.2q FIX: apply same context window trim as main chat ──
-                messages:       msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
+                messages:       msgs.map(m => ({ role: m.role, content: m.content })),
                 draftChar:      { name: draftChar.name, desc: draftChar.desc },
                 draftPrompt:    guidance,
-                userApiKey,
-                activeCharName: activeChar ? activeChar.name : 'the main character',
-                max_tokens:     MAX_TOKENS   // v1.2.2r: hard cap
+                userApiKey,     // null = use server key, string = use BYOK
+                activeCharName: activeChar ? activeChar.name : 'the main character'
             })
         });
         const data = await response.json();
 
         if (response.ok) {
-            const draftText  = data.choices[0].message.content;
-            const tokensUsed = estimateTokens(draftText);
+            const draftText = data.choices[0].message.content;
+            // Bug fix: clear innerHTML first before setting innerText
+            // to prevent duplication from leftover spinner HTML
             outputEl.innerHTML    = '';
             outputEl.innerText    = draftText;
             outputEl.dataset.draft = draftText;
-
-            // Token badge below draft output
-            const existingBadge = document.getElementById(`draft-token-${idx}`);
-            if (existingBadge) existingBadge.remove();
-            const badge = document.createElement('div');
-            badge.id = `draft-token-${idx}`;
-            badge.innerHTML = buildTokenBadgeHTML(tokensUsed, 'draft-token-badge');
-            outputEl.insertAdjacentElement('afterend', badge);
-
             if (sendBtn) { sendBtn.style.display = 'inline-block'; }
             if (copyBtn) { copyBtn.style.display = 'inline-block'; }
         } else {
@@ -1682,6 +1473,7 @@ async function generateDraft(idx) {
     }
 }
 
+/** Copy the generated draft to clipboard */
 function copyDraft(idx) {
     const outputEl = document.getElementById(`draft-output-${idx}`);
     const text     = outputEl?.dataset.draft || '';
@@ -1689,17 +1481,21 @@ function copyDraft(idx) {
     navigator.clipboard.writeText(text).then(() => showToast('Draft copied to clipboard!'));
 }
 
+/** Send the accepted draft as a user message in the main chat */
 function sendDraftAsReply(idx) {
     const outputEl = document.getElementById(`draft-output-${idx}`);
     const text     = outputEl?.dataset.draft || '';
     if (!text) return;
 
+    // Bug fix: explicitly clear the input first, then set value
+    // prevents any existing content being appended to the draft
     const chatInput   = document.getElementById('chat-input');
     chatInput.value   = '';
     chatInput.value   = text.trim();
     autoResizeTextarea(chatInput);
     closeDraftPanel(idx);
 
+    // Clear the draft panel output so it's fresh next time
     if (outputEl) {
         outputEl.innerHTML     = '';
         outputEl.dataset.draft = '';
@@ -1712,13 +1508,6 @@ function sendDraftAsReply(idx) {
 
     chatInput.focus();
     showToast('Draft loaded — review then press Send');
-}
-
-function closeDraftPanel(idx) {
-    const panel   = document.getElementById(`draft-panel-${idx}`);
-    const trigger = document.getElementById(`draft-trigger-${idx}`);
-    if (panel)   panel.style.display   = 'none';
-    if (trigger) trigger.style.display = 'inline-flex';
 }
 
 // ─────────────────────────────────────────
@@ -1753,10 +1542,9 @@ function restoreStateJSON(event) {
             if (state.provider === 'mancer')       { state.provider = 'openrouter'; state.model = 'z-ai/glm-4.5-air:free'; }
             if (state.directorEnabled      == null) state.directorEnabled      = false;
             if (state.directorInstructions == null) state.directorInstructions = '';
-            if (state.proseStyle           == null) state.proseStyle           = 'literary';
             localStorage.setItem('rp-companion-state', JSON.stringify(state));
             initSettings(); initBible(); initCharacters(); initChapters();
-            applyDirectorUI(); updateCharBadge(); updateStyleBadge(); renderChat();
+            applyDirectorUI(); updateCharBadge(); renderChat();
             document.getElementById('restore-file-input').value = '';
             showToast('Backup restored!'); navTo('chat');
         } catch(err) {
@@ -1771,9 +1559,11 @@ function restoreStateJSON(event) {
 // CHAT INPUT
 // ─────────────────────────────────────────
 function autoResizeTextarea(ta) {
+    // Reset to min-height first so shrinking works correctly
     ta.style.height = '56px';
     const newHeight = Math.min(ta.scrollHeight, 160);
     ta.style.height = newHeight + 'px';
+    // Allow scroll when content exceeds max height
     ta.style.overflowY = ta.scrollHeight > 160 ? 'auto' : 'hidden';
 }
 function checkEnter(e) {
@@ -1782,6 +1572,12 @@ function checkEnter(e) {
 
 // ─────────────────────────────────────────
 // SEND MESSAGE
+//
+// Director's Mode works entirely through the system prompt:
+//   - Instructions are injected via constructSystemPrompt() → {{director}} tag
+//   - They are NEVER added as chat messages
+//   - Chat history stays clean: only role+content from user/assistant
+//   - reasoning_content and any extra fields are stripped from API payload
 // ─────────────────────────────────────────
 async function sendMessage() {
     if (!state.activeCharId)    return showToast('Select a character first');
@@ -1805,11 +1601,13 @@ async function sendMessage() {
     saveState(); renderChat();
     if (shouldScroll) cc.scrollTop = cc.scrollHeight;
 
+    // Strip ALL extra fields — only role + content go to API
     const apiMessages = [
         { role: 'system', content: constructSystemPrompt() },
         ...msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content }))
     ];
 
+    // Guard: warn if payload is getting very large
     const payloadSize = JSON.stringify(apiMessages).length;
     if (payloadSize > 800000) {
         return showToast('⚠️ Chat history very large — reduce Context Window in Settings or clear old messages');
@@ -1827,7 +1625,7 @@ async function sendMessage() {
         const res  = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages, max_tokens: MAX_TOKENS })
+            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages })
         });
         const data = await res.json();
         document.getElementById(loadId)?.remove();
@@ -1860,33 +1658,46 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBYOK();
     document.getElementById('setting-provider').addEventListener('change', handleProviderChange);
 
+    // ── First-run detection ──
+    // If no provider or model configured, send user to Settings first
+    // so they choose their API provider before trying to chat
     const isFirstRun = !state.provider || !state.model;
     navTo(isFirstRun ? 'settings' : 'chat');
 
+    // ── ANDROID PWA KEYBOARD FIX ──
     if (window.visualViewport) {
         const chatView = document.getElementById('view-chat');
         const navBar   = document.querySelector('nav');
 
         const onViewportResize = () => {
             const vvh        = window.visualViewport.height;
+            const vvw        = window.visualViewport.width;
             const screenH    = window.screen.height;
+
+            // Keyboard is open when visible viewport is significantly smaller than screen
+            // Use screen.height as the reliable "full height" reference
             const keyboardOpen = vvh < screenH * 0.75;
 
+            // Only resize chat view — other views should not be affected
             if (chatView.classList.contains('active')) {
                 chatView.style.height = vvh + 'px';
             } else {
+                // Reset when not in chat view so other views aren't affected
                 chatView.style.height = '';
             }
 
+            // Show/hide nav bar based on keyboard state
             if (navBar) {
                 if (keyboardOpen) {
                     navBar.classList.add('keyboard-open');
                 } else {
                     navBar.classList.remove('keyboard-open');
+                    // Ensure nav is always visible when keyboard closes
                     navBar.style.transform = '';
                 }
             }
 
+            // Scroll chat to bottom when keyboard opens
             if (keyboardOpen) {
                 const container = document.getElementById('chat-container');
                 if (container) {
@@ -1897,6 +1708,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         window.visualViewport.addEventListener('resize', onViewportResize);
 
+        // Also reset nav visibility whenever user navigates to any tab
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (navBar) navBar.classList.remove('keyboard-open');
