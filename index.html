@@ -318,7 +318,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2u)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2w)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -442,13 +442,13 @@
                 <input type="radio" name="prose-style" id="style-literary" value="literary"
                     onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:#818cf8;flex-shrink:0;">
                 <span>
-                    <strong style="color:#c7d2fe;">🎭 Literary</strong>
+                    <strong style="color:#c7d2fe;">✒️ Sparse &amp; Precise</strong>
                     <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
-                        Staccato fragments. Physical detail as emotion. No adverbs. High atmospheric density.
-                        Best for intense, precise scenes.
+                        Short declarative sentences. Physical detail carries emotion. No adverbs.
+                        Every word load-bearing. High atmospheric density.
                     </span>
                     <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
-                        "She keeps walking. Her thumb traces a slow arc across his knuckles. She doesn't fix it."
+                        "(She keeps walking. Her thumb traces a slow arc across his knuckles.) 'I always know.' (She doesn't fix it.)"
                     </span>
                 </span>
             </label>
@@ -459,10 +459,10 @@
                 <input type="radio" name="prose-style" id="style-prose" value="prose"
                     onchange="onStyleChange()" style="width:auto;margin:4px 0 0 0;accent-color:var(--success);flex-shrink:0;">
                 <span>
-                    <strong style="color:#86efac;">📖 Prose</strong>
+                    <strong style="color:#86efac;">📖 Narrative Prose</strong>
                     <span style="display:block;font-size:.74rem;color:var(--muted);margin-top:3px;">
-                        Flowing narrative paragraphs mixed with dialogue. Familiar and readable.
-                        Best for general roleplay and new users.
+                        Flowing narrative paragraphs mixed with dialogue. Natural and readable.
+                        Best for most roleplay scenes.
                     </span>
                     <span style="display:block;font-size:.7rem;color:#555;margin-top:4px;font-style:italic;">
                         "Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated — and said nothing about it."
@@ -488,10 +488,20 @@
             </label>
 
         </div>
-        <!-- Active style badge -->
         <div style="margin-top:12px;font-size:.75rem;color:#555;">
-            Active style injected into system prompt: <strong id="style-active-label" style="color:var(--muted);">—</strong>
+            Active style: <strong id="style-active-label" style="color:var(--muted);">—</strong>
         </div>
+    </div>
+
+    <div class="setting-group">
+        <label>Response Length Limit
+            <span class="range-value" id="maxwords-val" style="float:right;color:var(--primary);font-weight:bold;">600 words</span>
+        </label>
+        <input type="range" id="setting-maxwords" min="0" max="800" step="150" value="600"
+            oninput="updateMaxWordsValue()" style="margin-bottom:6px;">
+        <p style="font-size:.74rem;color:#555;margin-top:2px;margin-bottom:0;" id="maxwords-hint">
+            ℹ️ Applies to both main chat and Draft Assistant. Higher values allow scenes to resolve naturally.
+        </p>
     </div>
 
     <div class="setting-group">
@@ -740,33 +750,35 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.2u
+// RP Companion v1.2.2w
 //
-// CHANGELOG v1.2.2u
+// CHANGELOG v1.2.2w
 // -----------------
-// FIX 1 — AUTO-MIGRATION: Old saved templates (pre-v1.2.2t) that still
-//   contain the hardcoded parentheses Formatting Rule are now automatically
-//   patched on load. The migration replaces the old rule with {{style}}
-//   silently — no user action required. A one-time toast confirms the patch.
-//   Migration flag: state.templateMigratedV122t = true (prevents re-running).
+// FEAT: Response length is now admin-controlled via a slider in Settings.
+//       Range: 150 / 300 / 450 / 600 / 800 / Unlimited words.
+//       Replaces the hardcoded 400-word cap which was damaging narrative
+//       quality by truncating scenes before their emotional resolution.
+//       "Unlimited" removes the word instruction entirely — AI self-regulates.
+//       Both MAX_TOKENS (API hard cap) and MAX_WORDS (prompt instruction)
+//       are derived from the slider value at runtime.
 //
-// FIX 2 — DRAFT ASSISTANT STYLE ISOLATION: generateDraft() now builds its
-//   own clean system prompt instead of inheriting any style block from the
-//   main chat. Draft Assistant always writes in natural flowing prose
-//   regardless of the user's style selector setting. This is correct because
-//   the Draft Assistant is a writing utility, not a character performance.
-//   A dedicated DRAFT_SYSTEM_PROMPT constant controls this clearly.
+// FIX:  Style terminology updated throughout — "staccato" and "fragment"
+//       removed from all style block labels, descriptions, and UI text.
+//       Replaced with correct prompt engineering terminology:
+//         "Staccato / Fragment"  →  "Sparse & Precise"
+//         "staccato fragments"   →  "vertical formatting / list drift"
+//       Literary style block now explicitly forbids single isolated words
+//       and broken single-word lines — the root cause of the broken output.
+//       Renamed: 🎭 Literary → ✒️ Sparse & Precise
 //
-// FIX 3 — LITERARY STYLE BLOCK TONED DOWN: The v1.2.2t "overrides any
-//   prior" language was too aggressive and bled into the Draft Assistant
-//   even before Fix 2. Literary block now uses authoritative but contained
-//   language. The override prefix is kept only in Prose and Dialogue blocks
-//   where it's needed to countermand old parentheses rules.
-//
-// VERSION: v1.2.2t → v1.2.2u
+// NEW STATE KEY: state.maxWords (default: 600)
+// AFFECTED: MAX_TOKENS, MAX_WORDS (now dynamic), style blocks, settings UI,
+//           constructSystemPrompt(), buildDraftSystemPrompt(), initSettings(),
+//           saveSettings(), updateRangeValue()
+// VERSION: v1.2.2u → v1.2.2w
 // =============================================================================
 
-console.log('RP Companion v1.2.2u loaded');
+console.log('RP Companion v1.2.2w loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -832,6 +844,7 @@ Stay in character at all times. React to body language, tone, and dialogue. If t
     directorEnabled:      false,
     directorInstructions: '',
     proseStyle:           'literary',
+    maxWords:             600,
     templateMigratedV122t: false
 };
 
@@ -843,6 +856,7 @@ if (state.provider === 'mancer')            { state.provider = 'openrouter'; sta
 if (state.directorEnabled      == null)     state.directorEnabled      = false;
 if (state.directorInstructions == null)     state.directorInstructions = '';
 if (state.proseStyle           == null)     state.proseStyle           = 'literary';
+if (state.maxWords             == null)     state.maxWords             = 600;
 if (state.templateMigratedV122t == null)    state.templateMigratedV122t = false;
 
 // ── v1.2.2u: Auto-patch old templates that still have the hardcoded
@@ -883,22 +897,28 @@ function generateId() { return Date.now().toString(36) + Math.random().toString(
 function saveState()   { localStorage.setItem('rp-companion-state', JSON.stringify(state)); }
 
 // ─────────────────────────────────────────
-// TOKEN HELPERS
-// estimateTokens: ~4 chars per token (standard approximation)
-// MAX_TOKENS: hard API cap sent with every request
-// MAX_WORDS:  instruction added to system prompt
+// TOKEN / WORD LIMIT HELPERS
+// v1.2.2w: limits are now admin-controlled via Settings slider.
+// getMaxWords()   — returns the current word limit (0 = unlimited)
+// getMaxTokens()  — returns API token cap derived from word limit
+//                   (~1.5 tokens per word + 20% headroom)
 // ─────────────────────────────────────────
-const MAX_TOKENS = 600;   // hard API cap  (≈ 400 words + headroom)
-const MAX_WORDS  = 400;   // system prompt instruction
+function getMaxWords()  { return state.maxWords  || 600; }
+function getMaxTokens() {
+    const w = getMaxWords();
+    if (w === 0) return null;  // unlimited — don't send max_tokens to API
+    return Math.round(w * 1.5 * 1.2);  // 1.5 tokens/word + 20% headroom
+}
 
 function estimateTokens(text) {
     return Math.round((text || '').length / 4);
 }
 
 function buildTokenBadgeHTML(tokens, cssClass = 'msg-token-badge') {
-    const overLimit = tokens >= 580;
-    const cls = overLimit ? `${cssClass} over-limit` : cssClass;
-    const icon = overLimit ? '⚠️' : '🔢';
+    const cap       = getMaxTokens();
+    const overLimit = cap ? tokens >= Math.round(cap * 0.95) : false;
+    const cls   = overLimit ? `${cssClass} over-limit` : cssClass;
+    const icon  = overLimit ? '⚠️' : '🔢';
     const label = overLimit ? `~${tokens} tokens (limit hit)` : `~${tokens} tokens`;
     return `<span class="${cls}">${icon} ${label}</span>`;
 }
@@ -910,46 +930,48 @@ function buildTokenBadgeHTML(tokens, cssClass = 'msg-token-badge') {
 // ─────────────────────────────────────────
 const STYLE_BLOCKS = {
 
-    literary: `FORMATTING RULE — LITERARY (Staccato / Fragment):
+    literary: `FORMATTING RULE — SPARSE & PRECISE:
 Use "Quotation marks" for spoken dialogue only.
 Place all visual cues, physical actions, and internal monologue inside (parentheses).
 Example: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."
-Write in short, punchy declarative fragments — not flowing sentences.
+Write in short, declarative sentences — complete thoughts, compressed.
+Every word must be load-bearing. No decoration, no filler.
 Use physical detail as the primary carrier of emotion. Never name the emotion directly.
 No adverbs. No similes. No dialogue tags beyond "she said" or nothing at all.
-Silence, restraint, and pauses carry as much weight as speech.
-Internal monologue is compressed into observation — show the pulse, the jaw, the hem. Do not explain what they mean.
+CRITICAL: Never place a single isolated word on its own line. Never stack single words vertically.
+The minimum unit is one complete image, action, or thought per sentence.
+Sentence length varies with emotional weight — not arbitrarily short.
 REGISTER EXAMPLE: (She keeps walking. Her thumb traces a slow arc across his knuckles.) "I always know." (She doesn't fix it.)`,
 
-    prose: `FORMATTING RULE — PROSE (Narrative + Dialogue):
+    prose: `FORMATTING RULE — NARRATIVE PROSE:
 IMPORTANT: This rule overrides any prior formatting instructions in this prompt.
 Do NOT use parentheses for action beats or internal monologue.
-Do NOT write in short fragments. Write in complete, flowing sentences.
-Weave action, internal reaction, and dialogue into natural narrative paragraphs.
-Use complete sentences with clear cause and effect. Emotions may be named sparingly.
-Balance action beats, internal thought, and spoken exchange in each paragraph.
-Avoid purple prose — keep descriptions purposeful. Standard dialogue tags are acceptable.
+Do NOT write isolated single words or vertically stacked fragments.
+Write in complete, flowing sentences woven into natural narrative paragraphs.
+Weave action, internal reaction, and dialogue together fluidly.
+Emotions may be named sparingly. Standard dialogue tags are acceptable.
+Avoid purple prose — keep descriptions purposeful and specific.
 Everything flows as continuous narrative prose — no brackets, no asterisks, no special formatting.
 REGISTER EXAMPLE: Victoria walked through the lobby, her hand firm in his. She could feel his pulse — elevated, rapid — and said nothing about it. "Greatest negotiation of your career," she repeated, her voice warm and unhurried.`,
 
     dialogue: `FORMATTING RULE — DIALOGUE-FORWARD:
 IMPORTANT: This rule overrides any prior formatting instructions in this prompt.
 Do NOT use parentheses for action beats or internal monologue.
+Do NOT write isolated single words or vertically stacked lines.
 Do NOT write extended narrative passages or internal reflection.
 Prioritise spoken exchange above everything else.
 Keep action beats minimal — maximum one short beat per 2-3 lines of dialogue.
 Move the scene entirely through what characters say and how they say it.
-Subtext lives in the dialogue itself — do not explain it in action or thought.
-Fast-paced. Punchy. Reads almost like a screenplay or stage play.
-Standard quotation marks for all speech. Brief plain-text action beats only — never parentheses.
+Subtext lives in the dialogue itself — do not explain it in narration or thought.
+Standard quotation marks for all speech. Brief plain-text action beats only.
 REGISTER EXAMPLE: "Greatest negotiation of your career," she said. "That's a significant claim." She glanced sideways at him. "I always know." A beat. "I put it on anyway. Because you asked."`,
 
 };
 
 const STYLE_LABELS = {
-    literary:  '🎭 Literary',
-    prose:     '📖 Prose',
-    dialogue:  '💬 Dialogue-Fwd',
+    literary:  '✒️ Sparse & Precise',
+    prose:     '📖 Narrative Prose',
+    dialogue:  '💬 Dialogue-Forward',
 };
 
 // ─────────────────────────────────────────
@@ -969,11 +991,12 @@ CONTEXT: You are drafting a reply from ${draftCharName}'s perspective in an ongo
 
 WRITING STYLE:
 Write in natural, flowing prose. Use "Quotation marks" for spoken dialogue.
-Keep action beats and internal thoughts woven naturally into the narrative.
-Be concise — this is a draft for the user to review and edit.
-No parentheses formatting. No staccato fragments. Just clean, readable prose.
+Weave action beats and internal reactions naturally into the narrative.
+Do NOT use parentheses for action beats or internal monologue.
+Do NOT write isolated single words or vertically stacked lines.
+Write complete, readable sentences — this is a draft for the user to review and edit.
 
-Keep your response under ${MAX_WORDS} words.`;
+Keep your response under ${getMaxWords() === 0 ? 600 : getMaxWords()} words.`;
 }
 
 function getStyleBlock() {
@@ -1128,7 +1151,9 @@ ${state.directorInstructions}
 
     return rendered
         + (hasStyleTag ? '' : '\n\n' + styleBlock)
-        + `\n\nRESPONSE LENGTH: Keep your response under ${MAX_WORDS} words.`;
+        + (getMaxWords() === 0
+            ? `\n\nRESPONSE LENGTH: Write at the length this scene genuinely requires. No padding. No truncation.`
+            : `\n\nRESPONSE LENGTH: Keep your response under ${getMaxWords()} words.`);
 }
 
 // ─────────────────────────────────────────
@@ -1143,6 +1168,7 @@ function saveSettings() {
     state.systemTemplate = document.getElementById('setting-sys-template').value;
     state.bibleToggle    = document.getElementById('setting-bible-toggle').checked;
     state.contextWindow  = parseInt(document.getElementById('setting-context').value);
+    state.maxWords       = parseInt(document.getElementById('setting-maxwords').value);
     const styleSel       = document.querySelector('input[name="prose-style"]:checked');
     if (styleSel) state.proseStyle = styleSel.value;
     saveState();
@@ -1175,6 +1201,8 @@ function initSettings() {
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle !== false;
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
     document.getElementById('ctx-val').innerText            = state.contextWindow  || 15;
+    document.getElementById('setting-maxwords').value       = state.maxWords != null ? state.maxWords : 600;
+    updateMaxWordsValue();
 
     // Load prose style radio
     const styleVal = state.proseStyle || 'literary';
@@ -1197,6 +1225,19 @@ function handleProviderChange() {
 
 function updateRangeValue() {
     document.getElementById('ctx-val').innerText = document.getElementById('setting-context').value;
+    debounceSaveSettings();
+}
+
+function updateMaxWordsValue() {
+    const val = parseInt(document.getElementById('setting-maxwords').value);
+    const display = val === 0 ? 'Unlimited' : `${val} words`;
+    document.getElementById('maxwords-val').innerText = display;
+    const hint = document.getElementById('maxwords-hint');
+    if (hint) {
+        hint.innerText = val === 0
+            ? '✨ Unlimited — AI writes at the length the scene genuinely requires. Recommended for narrative roleplay.'
+            : `ℹ️ Applies to both main chat and Draft Assistant. Higher values allow scenes to resolve naturally.`;
+    }
     debounceSaveSettings();
 }
 
@@ -1699,7 +1740,7 @@ async function generateDraft(idx) {
                 draftPrompt:    guidance,
                 userApiKey,
                 activeCharName,
-                max_tokens:     MAX_TOKENS
+                max_tokens:     getMaxTokens()   // v1.2.2w: dynamic from Settings
             })
         });
         const data = await response.json();
@@ -1876,7 +1917,7 @@ async function sendMessage() {
         const res  = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages, max_tokens: MAX_TOKENS })
+            body: JSON.stringify({ provider: state.provider, model: state.model, messages: apiMessages, max_tokens: getMaxTokens() })
         });
         const data = await res.json();
         document.getElementById(loadId)?.remove();
