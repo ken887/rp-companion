@@ -318,7 +318,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2w)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2y)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -548,6 +548,36 @@
         <h3>💬 Export Chat</h3>
         <button class="btn btn-secondary" onclick="exportChat()">💬 Export Current Chat (.txt)</button>
     </div>
+
+    <!-- ── DEBUG PANEL ── -->
+    <div class="setting-group" id="debug-panel" style="border-color:#333;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;color:#666;font-size:.9rem;">🔧 Debug &amp; Diagnostics</h3>
+            <button onclick="toggleDebugPanel()" id="debug-toggle-btn"
+                style="background:transparent;border:1px solid #333;color:#555;padding:3px 10px;border-radius:5px;font-size:.75rem;cursor:pointer;">
+                Show
+            </button>
+        </div>
+        <div id="debug-content" style="display:none;">
+            <div id="debug-output"
+                style="background:#0a0a0a;border:1px solid #222;border-radius:6px;padding:12px;
+                       font-family:monospace;font-size:.72rem;color:#aaa;white-space:pre-wrap;
+                       word-break:break-all;max-height:300px;overflow-y:auto;margin-bottom:10px;">
+                Tap "Run Diagnostics" to inspect current state.
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-small" onclick="runDiagnostics()" style="flex:1;min-width:120px;">
+                    🔍 Run Diagnostics
+                </button>
+                <button class="btn btn-small" onclick="applyDebugFix()" style="flex:1;min-width:120px;background:#7c3aed;">
+                    ⚡ Auto-Fix Template
+                </button>
+            </div>
+            <p style="font-size:.7rem;color:#444;margin:8px 0 0 0;">
+                Auto-Fix patches your saved template to use the correct {{style}} tag and resets prose style to Narrative Prose.
+            </p>
+        </div>
+    </div>
     <br>
 </main>
 
@@ -598,6 +628,8 @@
         <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
         <br>
         <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
+        <button class="btn btn-danger btn-small" onclick="clearChatHistorySafe()" style="margin-top:6px;background:#7f1d1d;border-color:#991b1b;">🗑 Clear Chat History</button>
+        <p style="font-size:.72rem;color:#666;margin-top:5px;margin-bottom:0;">⚠️ Permanently deletes all messages in this chapter. Cannot be undone.</p>
     </div>
 </main>
 
@@ -613,7 +645,6 @@
                 <button id="btn-toggle-director" class="btn-toggle-dir" onclick="toggleDirectorMode()">
                     🎬 Director's Mode
                 </button>
-                <button class="btn btn-danger btn-small" onclick="clearChatHistory()" style="padding:4px 8px;font-size:.75rem;">🗑 Clear Chat</button>
             </div>
         </div>
         <div class="chat-header-badges">
@@ -750,35 +781,34 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.2w
+// RP Companion v1.2.2y
 //
-// CHANGELOG v1.2.2w
+// CHANGELOG v1.2.2y
 // -----------------
-// FEAT: Response length is now admin-controlled via a slider in Settings.
-//       Range: 150 / 300 / 450 / 600 / 800 / Unlimited words.
-//       Replaces the hardcoded 400-word cap which was damaging narrative
-//       quality by truncating scenes before their emotional resolution.
-//       "Unlimited" removes the word instruction entirely — AI self-regulates.
-//       Both MAX_TOKENS (API hard cap) and MAX_WORDS (prompt instruction)
-//       are derived from the slider value at runtime.
+// FIX 1 — CLEAR CHAT BUTTON REMOVED FROM HEADER (critical mobile safety fix)
+//   The 🗑 Clear Chat button was sitting next to Director's Mode in the chat
+//   header. On Android one mis-tap wiped all chat history with no recovery.
+//   Button removed from header entirely.
+//   Replaced with a SAFE version inside the Chapters tab — buried, labelled
+//   with a warning, and now requires TWO separate confirmation dialogs before
+//   deleting anything. Much harder to trigger accidentally.
 //
-// FIX:  Style terminology updated throughout — "staccato" and "fragment"
-//       removed from all style block labels, descriptions, and UI text.
-//       Replaced with correct prompt engineering terminology:
-//         "Staccato / Fragment"  →  "Sparse & Precise"
-//         "staccato fragments"   →  "vertical formatting / list drift"
-//       Literary style block now explicitly forbids single isolated words
-//       and broken single-word lines — the root cause of the broken output.
-//       Renamed: 🎭 Literary → ✒️ Sparse & Precise
+// FIX 2 — DOUBLE CONFIRMATION ON CLEAR CHAT
+//   clearChatHistorySafe() requires two confirmations.
+//   First: shows message count and chapter name.
+//   Second: final "are you sure" before deletion.
+//   Previously a single confirm() was the only guard.
 //
-// NEW STATE KEY: state.maxWords (default: 600)
-// AFFECTED: MAX_TOKENS, MAX_WORDS (now dynamic), style blocks, settings UI,
-//           constructSystemPrompt(), buildDraftSystemPrompt(), initSettings(),
-//           saveSettings(), updateRangeValue()
-// VERSION: v1.2.2u → v1.2.2w
+// FEAT — CHAPTER LENGTH NUDGE
+//   After every 200 messages (100 pairs) a toast nudges the user to consider
+//   starting a new chapter. Addresses the 600-message single-chapter problem
+//   which causes slow performance and context confusion on mobile.
+//   The app never forces a chapter split — it only suggests one.
+//
+// VERSION: v1.2.2x → v1.2.2y
 // =============================================================================
 
-console.log('RP Companion v1.2.2w loaded');
+console.log('RP Companion v1.2.2y loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -1028,6 +1058,163 @@ function onStyleChange() {
         updateStyleBadge();
         showToast(`Style set to ${STYLE_LABELS[state.proseStyle]}`);
     }
+}
+
+// ─────────────────────────────────────────
+// DEBUG & DIAGNOSTICS
+// v1.2.2x: in-app diagnostics for Android PWA where browser
+// console is not accessible. Shows saved state health and
+// provides one-tap auto-fix for template corruption.
+// ─────────────────────────────────────────
+function toggleDebugPanel() {
+    const content = document.getElementById('debug-content');
+    const btn     = document.getElementById('debug-toggle-btn');
+    const visible = content.style.display !== 'none';
+    content.style.display = visible ? 'none' : 'block';
+    btn.innerText = visible ? 'Show' : 'Hide';
+}
+
+function runDiagnostics() {
+    const out = document.getElementById('debug-output');
+    const s   = JSON.parse(localStorage.getItem('rp-companion-state') || '{}');
+
+    const tmpl            = s.systemTemplate || '';
+    const hasStyleTag     = tmpl.includes('{{style}}');
+    const hasOldRule      = tmpl.includes('Formatting Rule: Use "Quotation marks"') ||
+                            tmpl.includes('Staccato / Fragment') ||
+                            tmpl.includes('not flowing sentences');
+    const hasFragmentWord = tmpl.includes('fragment') || tmpl.includes('Fragment');
+    const templatePreview = tmpl.substring(0, 300).replace(/\n/g, '↵') + (tmpl.length > 300 ? '...' : '');
+
+    const lines = [
+        `=== RP Companion Diagnostics ===`,
+        `Version:              v1.2.2x`,
+        ``,
+        `--- State Keys ---`,
+        `proseStyle:           ${s.proseStyle || '(not set)'}`,
+        `maxWords:             ${s.maxWords != null ? s.maxWords : '(not set)'}`,
+        `templateMigrated:     ${s.templateMigratedV122t || false}`,
+        `contextWindow:        ${s.contextWindow || '(not set)'}`,
+        `provider:             ${s.provider || '(not set)'}`,
+        `model:                ${s.model || '(not set)'}`,
+        ``,
+        `--- Template Health ---`,
+        `{{style}} tag present:   ${hasStyleTag ? '✅ YES' : '❌ NO — style selector not injecting'}`,
+        `Old hardcoded rule:      ${hasOldRule  ? '❌ YES — causing format bleed' : '✅ NO — clean'}`,
+        `"fragment" word present: ${hasFragmentWord ? '⚠️  YES — may cause list drift' : '✅ NO — clean'}`,
+        `Template length:         ${tmpl.length} chars`,
+        ``,
+        `--- Template Preview (first 300 chars) ---`,
+        templatePreview,
+        ``,
+        `--- Characters ---`,
+        `Count: ${(s.characters || []).length}`,
+        ...(s.characters || []).map(c => `  • ${c.name}: ${(c.desc || '').substring(0, 60)}...`),
+        ``,
+        `--- Chapters ---`,
+        `Count: ${(s.chapters || []).length}`,
+        ...(s.chapters || []).map(c => `  • ${c.title || 'Untitled'}`),
+    ];
+
+    out.innerText = lines.join('\n');
+
+    // Colour the output based on health
+    if (!hasStyleTag || hasOldRule) {
+        out.style.borderColor = '#7f1d1d';
+        out.style.color = '#fca5a5';
+    } else {
+        out.style.borderColor = '#14532d';
+        out.style.color = '#86efac';
+    }
+}
+
+function applyDebugFix() {
+    const out = document.getElementById('debug-output');
+    const fixes = [];
+
+    // Fix 1: patch old formatting rule → {{style}}
+    if (state.systemTemplate) {
+        const OLD_PATTERNS = [
+            // v1.2.2u Literary block header
+            `FORMATTING RULE — LITERARY (Staccato / Fragment):\nUse "Quotation marks" for spoken dialogue only.\nPlace all visual cues, physical actions, and internal monologue inside (parentheses).\nExample: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."\nWrite in short, punchy declarative fragments — not flowing sentences.\nUse physical detail as the primary carrier of emotion. Never name the emotion directly.\nNo adverbs. No similes. No dialogue tags beyond "she said" or nothing at all.\nSilence, restraint, and pauses carry as much weight as speech.\nInternal monologue is compressed into observation — show the pulse, the jaw, the hem. Do not explain what they mean.\nREGISTER EXAMPLE: (She keeps walking. Her thumb traces a slow arc across his knuckles.) "I always know." (She doesn't fix it.)`,
+            // original hardcoded rule pre-v1.2.2t
+            `Formatting Rule: Use "Quotation marks" for spoken dialogue. Place all visual cues, physical actions, and internal monologue inside (parentheses).\nExample: (She feels her heart hammer as she turns away) "I didn't see anything. I promise."`,
+            `Formatting Rule: Use "Quotation marks" for spoken dialogue. Place all visual cues, physical actions, and internal monologue inside (parentheses).`,
+        ];
+
+        let patched = false;
+        for (const pattern of OLD_PATTERNS) {
+            if (state.systemTemplate.includes(pattern)) {
+                state.systemTemplate = state.systemTemplate.replace(pattern, '{{style}}');
+                fixes.push('✅ Patched old formatting rule → {{style}}');
+                patched = true;
+                break;
+            }
+        }
+
+        // If {{style}} still not present after patching, inject it
+        if (!state.systemTemplate.includes('{{style}}')) {
+            // Try to inject after OUTPUT STRUCTURE line
+            if (state.systemTemplate.includes('OUTPUT STRUCTURE')) {
+                state.systemTemplate = state.systemTemplate.replace(
+                    'OUTPUT STRUCTURE',
+                    'OUTPUT STRUCTURE\n\n{{style}}\n'
+                );
+                fixes.push('✅ Injected {{style}} tag after OUTPUT STRUCTURE');
+            } else {
+                // Last resort — append before {{director}}
+                state.systemTemplate = state.systemTemplate.replace(
+                    '{{director}}',
+                    '{{style}}\n\n{{director}}'
+                );
+                fixes.push('✅ Injected {{style}} tag before {{director}}');
+            }
+        }
+
+        if (!patched && fixes.length === 0) {
+            fixes.push('ℹ️ Template already clean — no patching needed');
+        }
+    } else {
+        // No template saved — reset to default
+        state.systemTemplate = defaultState.systemTemplate;
+        fixes.push('✅ No saved template found — reset to default');
+    }
+
+    // Fix 2: set proseStyle to prose
+    const oldStyle = state.proseStyle;
+    state.proseStyle = 'prose';
+    fixes.push(`✅ proseStyle: '${oldStyle}' → 'prose'`);
+
+    // Fix 3: set maxWords to 600 if not set
+    if (!state.maxWords) {
+        state.maxWords = 600;
+        fixes.push('✅ maxWords set to 600');
+    }
+
+    // Fix 4: mark migration as done
+    state.templateMigratedV122t = true;
+
+    // Save and reload UI
+    saveState();
+    initSettings();
+    updateStyleBadge();
+
+    out.style.borderColor = '#14532d';
+    out.style.color = '#86efac';
+    out.innerText = [
+        '=== Auto-Fix Complete ===',
+        '',
+        ...fixes,
+        '',
+        'Settings UI reloaded.',
+        'Run Diagnostics again to confirm.',
+        '',
+        '⚠️  Go to Settings → System Prompt Template',
+        'and confirm {{style}} is visible in the template.',
+        'Then send a test message.',
+    ].join('\n');
+
+    showToast('✅ Template fixed — check diagnostics to confirm');
 }
 
 // ─────────────────────────────────────────
@@ -1496,9 +1683,28 @@ function renderChat() {
 }
 
 function clearChatHistory() {
-    if (confirm('Clear chat history for this chapter?')) {
-        state.chatHistory[state.activeChapterId] = [];
-        saveState(); renderChat();
+    // v1.2.2y: redirect to safe version — Clear Chat removed from header
+    clearChatHistorySafe();
+}
+
+function clearChatHistorySafe() {
+    const msgs   = state.chatHistory[state.activeChapterId] || [];
+    const count  = msgs.length;
+    const ch     = state.chapters.find(c => c.id === state.activeChapterId);
+    const title  = ch ? ch.title : 'this chapter';
+    if (!confirm(`Delete ALL ${count} messages in "${title}"?\n\nThis cannot be undone. Make sure you have a backup.`)) return;
+    if (!confirm(`Are you sure? This will permanently delete ${count} messages.`)) return;
+    state.chatHistory[state.activeChapterId] = [];
+    saveState(); renderChat();
+    showToast('Chat history cleared');
+}
+
+// v1.2.2y: nudge user to start a new chapter when history gets long
+const CHAPTER_NUDGE_THRESHOLD = 200; // messages (100 pairs)
+function checkChapterLength() {
+    const msgs = state.chatHistory[state.activeChapterId] || [];
+    if (msgs.length > 0 && msgs.length % CHAPTER_NUDGE_THRESHOLD === 0) {
+        showToast(`💡 ${msgs.length} messages in this chapter — consider starting a new chapter to keep things fast`);
     }
 }
 
@@ -1928,6 +2134,7 @@ async function sendMessage() {
             if (aiMsg.reasoning_content) toSave.reasoning_content = aiMsg.reasoning_content;
             msgs.push(toSave);
             saveState(); renderChat();
+            checkChapterLength();
         } else {
             alert('Server Error: ' + (data.error || 'Unknown error'));
         }
