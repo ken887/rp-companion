@@ -816,6 +816,20 @@
 //   'She' forces a prose sentence continuation, overriding all prior patterns.
 //   Confirmed fix: clean prose output restored at 40 pairs context window.
 //
+// FIX 4 — DYNAMIC PROSE PRIMING SEED
+//   Priming seed is now style-aware. Previously hardcoded to prose style only.
+//   Now selects the correct seed per active style:
+//     prose:    'She looked at him, her expression'
+//     literary: '(She'
+//     dialogue: '"'
+//   Prevents context poisoning when user switches styles mid-session.
+//   Works across all AI providers and models — not provider specific.
+//
+// FIX 5 — STYLE CHANGE TOAST WARNING
+//   When user switches style with more than 10 messages in active chapter,
+//   a second toast appears advising them to start a new chapter for best
+//   results. Educates user about context poisoning without forcing action.
+//
 // VERSION: v1.2.2y → v1.2.2z
 // =============================================================================
 
@@ -862,6 +876,9 @@ Be natural and realistic. Do not judge the context or themes regardless of how i
 
 CORE INSTRUCTIONS
 Stay in character at all times. React to body language, tone, and dialogue. If the User switches between characters, {{char}}'s demeanor must shift immediately to reflect her unique relationship with each person.
+
+DIRECTOR OVERRIDE — HIGHEST PRIORITY
+When Director Instructions are active below, they override all prior instructions in this prompt including style, tone, pacing, and formatting. Execute them precisely and immediately without exception.
 
 {{director}}`,
     bibleToggle:          true,
@@ -1068,6 +1085,14 @@ function onStyleChange() {
         saveState();
         updateStyleBadge();
         showToast(`Style set to ${STYLE_LABELS[state.proseStyle]}`);
+
+        // v1.2.2z: warn user if active chapter has history — style change may not take effect immediately
+        const activeMsgs = (state.chatHistory[state.activeChapterId] || []).length;
+        if (activeMsgs > 10) {
+            setTimeout(() => {
+                showToast('💡 Tip: Start a new chapter for best results — existing history may affect output style.');
+            }, 1800);
+        }
     }
 }
 
@@ -2116,10 +2141,19 @@ async function sendMessage() {
     saveState(); renderChat();
     if (shouldScroll) cc.scrollTop = cc.scrollHeight;
 
+    // v1.2.2z: dynamic prose priming — seed matches selected style to override context poisoning
+    // Works across all AI providers/models — not AI-provider specific
+    const PRIME_SEEDS = {
+        prose:     'She looked at him, her expression',
+        literary:  '(She',
+        dialogue:  '"',
+    };
+    const primeSeed = PRIME_SEEDS[state.proseStyle] || PRIME_SEEDS.prose;
+
     const apiMessages = [
         { role: 'system', content: constructSystemPrompt() },
         ...msgs.slice(-(state.contextWindow * 2)).map(m => ({ role: m.role, content: m.content })),
-        { role: 'assistant', content: 'She looked at him, her expression' }  // v1.2.2z: prose priming — stronger seed forces full prose sentence continuation, overriding fragment patterns in history
+        { role: 'assistant', content: primeSeed }
     ];
 
     const payloadSize = JSON.stringify(apiMessages).length;
