@@ -320,7 +320,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.2z)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.3)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -629,9 +629,20 @@
         <label>Author Notes <span style="color:#555;font-size:.75rem;">(Private — never sent to AI)</span></label>
         <textarea id="chapter-notes" rows="4" class="note-area" placeholder="Your private notes, hidden from AI..." oninput="debounceSaveChapters()"></textarea>
         <br>
+
+        <!-- ── SCENES ── -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px;background:var(--surface2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:.9rem;font-weight:600;color:var(--primary-text);">📍 Scenes</span>
+                <button class="btn btn-small" style="padding:4px 10px;font-size:.8rem;" onclick="addScene()">+ New Scene</button>
+            </div>
+            <div class="chapter-nav" id="scene-tabs" style="margin-bottom:10px;"></div>
+            <div id="scene-editor" style="margin-top:8px;"></div>
+        </div>
+
         <button class="btn btn-danger btn-small" onclick="deleteCurrentChapter()">Delete This Chapter</button>
-        <button class="btn btn-danger btn-small" onclick="clearChatHistorySafe()" style="margin-top:6px;background:#7f1d1d;border-color:#991b1b;">🗑 Clear Chat History</button>
-        <p style="font-size:.72rem;color:#666;margin-top:5px;margin-bottom:0;">⚠️ Permanently deletes all messages in this chapter. Cannot be undone.</p>
+        <button class="btn btn-danger btn-small" onclick="clearChatHistorySafe()" style="margin-top:6px;background:#7f1d1d;border-color:#991b1b;">🗑 Clear Scene History</button>
+        <p style="font-size:.72rem;color:#666;margin-top:5px;margin-bottom:0;">⚠️ Permanently deletes all messages in the active scene. Cannot be undone.</p>
     </div>
 </main>
 
@@ -657,6 +668,10 @@
             <span class="badge badge-char" style="border-color:#3d5a3d;">
                 <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
                 Chapter: <strong id="badge-chapter-name" style="margin-left:3px;">None</strong>
+            </span>
+            <span class="badge badge-char" style="border-color:#3d4a5a;">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Scene: <strong id="badge-scene-name" style="margin-left:3px;">None</strong>
             </span>
             <span id="badge-director" class="badge badge-director hidden">
                 <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
@@ -783,9 +798,9 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.2z
+// RP Companion v1.2.3
 //
-// CHANGELOG v1.2.2z
+// CHANGELOG v1.2.3
 // -----------------
 // FIX 1 — CLEAR CHAT BUTTON REMOVED FROM HEADER (critical mobile safety fix)
 //   The 🗑 Clear Chat button was sitting next to Director's Mode in the chat
@@ -830,10 +845,10 @@
 //   a second toast appears advising them to start a new chapter for best
 //   results. Educates user about context poisoning without forcing action.
 //
-// VERSION: v1.2.2y → v1.2.2z
+// VERSION: v1.2.2z → v1.2.3
 // =============================================================================
 
-console.log('RP Companion v1.2.2z loaded');
+console.log('RP Companion v1.2.3 loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -898,7 +913,7 @@ When Director Instructions are active below, they override all prior instruction
     activeCharId:         'default-victoria',
     chapters:             [],
     activeChapterId:      null,
-    chatHistory:          {},
+    chatHistory:          {},   // keyed by sceneId (v1.2.3+)
     directorEnabled:      false,
     directorInstructions: '',
     proseStyle:           'literary',
@@ -1087,7 +1102,7 @@ function onStyleChange() {
         showToast(`Style set to ${STYLE_LABELS[state.proseStyle]}`);
 
         // v1.2.2z: warn user if active chapter has history — style change may not take effect immediately
-        const activeMsgs = (state.chatHistory[state.activeChapterId] || []).length;
+        const activeMsgs = (state.chatHistory[getActiveSceneId()] || []).length;
         if (activeMsgs > 10) {
             setTimeout(() => {
                 showToast('💡 Tip: Start a new chapter for best results — existing history may affect output style.');
@@ -1124,7 +1139,7 @@ function runDiagnostics() {
 
     const lines = [
         `=== RP Companion Diagnostics ===`,
-        `Version:              v1.2.2z`,
+        `Version:              v1.2.3`,
         ``,
         `--- State Keys ---`,
         `proseStyle:           ${s.proseStyle || '(not set)'}`,
@@ -1149,7 +1164,7 @@ function runDiagnostics() {
         ``,
         `--- Chapters ---`,
         `Count: ${(s.chapters || []).length}`,
-        ...(s.chapters || []).map(c => `  • ${c.title || 'Untitled'}`),
+        ...(s.chapters || []).map(c => `  • ${c.title || 'Untitled'} (${(c.scenes || []).length} scene${(c.scenes||[]).length===1?'':'s'})`),
     ];
 
     out.innerText = lines.join('\n');
@@ -1577,8 +1592,15 @@ function updateCharBadge() {
 }
 
 // ─────────────────────────────────────────
-// CHAPTERS
+// CHAPTERS (Halls) + SCENES  — v1.2.3
 // ─────────────────────────────────────────
+
+// Returns the active scene ID for the current Hall
+function getActiveSceneId() {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    return ch ? ch.activeSceneId : null;
+}
+
 function initChapters() {
     if (!state.chapters || state.chapters.length === 0) addChapter();
     renderChapterTabs();
@@ -1597,10 +1619,12 @@ function renderChapterTabs() {
     if (target) loadChapter(target);
 }
 function addChapter() {
-    const ch = { id: generateId(), title: 'New Chapter', summary: '', notes: '' };
+    const sceneId = generateId();
+    const scene   = { id: sceneId, label: 'Scene 1', createdAt: Date.now(), endedAt: null, messageCount: 0, observationLog: '' };
+    const ch      = { id: generateId(), title: 'New Chapter', summary: '', notes: '', activeSceneId: sceneId, scenes: [scene] };
     state.chapters.push(ch);
-    state.activeChapterId  = ch.id;
-    state.chatHistory[ch.id] = [];
+    state.activeChapterId     = ch.id;
+    state.chatHistory[sceneId] = [];
     saveState(); renderChapterTabs(); loadChapter(ch.id);
 }
 function loadChapter(id) {
@@ -1609,7 +1633,11 @@ function loadChapter(id) {
     document.getElementById('chapter-title').value   = ch.title;
     document.getElementById('chapter-summary').value = ch.summary;
     document.getElementById('chapter-notes').value   = ch.notes;
-    if (!state.chatHistory[id]) state.chatHistory[id] = [];
+
+    // Ensure active scene has a chatHistory entry
+    if (ch.activeSceneId && !state.chatHistory[ch.activeSceneId]) {
+        state.chatHistory[ch.activeSceneId] = [];
+    }
 
     const nameEl = document.getElementById('active-chapter-name');
     if (nameEl) nameEl.innerText = ch.title || 'Untitled';
@@ -1617,6 +1645,8 @@ function loadChapter(id) {
     const chatBadgeEl = document.getElementById('badge-chapter-name');
     if (chatBadgeEl) chatBadgeEl.innerText = ch.title || 'Untitled';
 
+    renderSceneTabs();
+    updateSceneBadge();
     saveState();
 }
 function debounceSaveChapters() {
@@ -1633,13 +1663,104 @@ function debounceSaveChapters() {
 }
 function deleteCurrentChapter() {
     if (state.chapters.length <= 1) return alert('You must have at least one chapter.');
-    if (confirm('Delete this chapter and its history?')) {
+    if (confirm('Delete this chapter and all its scenes?')) {
+        const ch = state.chapters.find(c => c.id === state.activeChapterId);
+        // Delete chatHistory for every scene in this Hall
+        if (ch && ch.scenes) {
+            ch.scenes.forEach(sc => { delete state.chatHistory[sc.id]; });
+        }
         const idx = state.chapters.findIndex(c => c.id === state.activeChapterId);
         state.chapters.splice(idx, 1);
-        delete state.chatHistory[state.activeChapterId];
         state.activeChapterId = state.chapters[0].id;
         saveState(); renderChapterTabs(); loadChapter(state.activeChapterId);
     }
+}
+
+// ─────────────────────────────────────────
+// SCENES
+// ─────────────────────────────────────────
+function renderSceneTabs() {
+    const container = document.getElementById('scene-tabs');
+    if (!container) return;
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    if (!ch) return;
+    container.innerHTML = '';
+    (ch.scenes || []).forEach(sc => {
+        const el = document.createElement('button');
+        el.className = `chapter-tab ${ch.activeSceneId === sc.id ? 'active' : ''}`;
+        el.innerText = sc.label || 'Untitled Scene';
+        el.onclick   = () => loadScene(sc.id);
+        container.appendChild(el);
+    });
+    // Render editor for active scene
+    const editorEl = document.getElementById('scene-editor');
+    if (!editorEl) return;
+    const sc = (ch.scenes || []).find(s => s.id === ch.activeSceneId);
+    if (!sc) { editorEl.innerHTML = ''; return; }
+    const msgCount = (state.chatHistory[sc.id] || []).length;
+    editorEl.innerHTML = `
+        <label style="font-size:.8rem;color:var(--muted);margin-bottom:4px;display:block;">Scene Label</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="scene-label-input" value="${sc.label || ''}"
+                style="margin-bottom:0;flex:1;font-size:.9rem;padding:8px 10px;"
+                oninput="renameScene('${sc.id}', this.value)">
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:8px;">
+            💬 ${msgCount} message${msgCount !== 1 ? 's' : ''} &nbsp;·&nbsp;
+            Started ${new Date(sc.createdAt).toLocaleDateString()}
+        </div>
+        ${(ch.scenes||[]).length > 1 ? `
+        <button class="btn btn-danger btn-small" style="margin-top:10px;font-size:.78rem;"
+            onclick="deleteScene('${sc.id}')">🗑 Delete This Scene</button>
+        ` : '<p style="font-size:.72rem;color:#555;margin-top:8px;margin-bottom:0;">Add a second scene to enable deletion.</p>'}
+    `;
+}
+function addScene() {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    if (!ch) return;
+    const sceneNum = (ch.scenes || []).length + 1;
+    const sceneId  = generateId();
+    const scene    = { id: sceneId, label: `Scene ${sceneNum}`, createdAt: Date.now(), endedAt: null, messageCount: 0, observationLog: '' };
+    ch.scenes.push(scene);
+    state.chatHistory[sceneId] = [];
+    ch.activeSceneId = sceneId;
+    saveState(); renderSceneTabs(); renderChat();
+    // Update scene badge in chat header
+    updateSceneBadge();
+    showToast(`Scene ${sceneNum} started`);
+}
+function loadScene(sceneId) {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    if (!ch) return;
+    ch.activeSceneId = sceneId;
+    if (!state.chatHistory[sceneId]) state.chatHistory[sceneId] = [];
+    saveState(); renderSceneTabs(); renderChat();
+    updateSceneBadge();
+}
+function renameScene(sceneId, newLabel) {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    if (!ch) return;
+    const sc = ch.scenes.find(s => s.id === sceneId);
+    if (sc) { sc.label = newLabel; saveState(); renderSceneTabs(); updateSceneBadge(); }
+}
+function deleteScene(sceneId) {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    if (!ch || (ch.scenes || []).length <= 1) return alert('A chapter must have at least one scene.');
+    if (!confirm('Delete this scene and its messages?')) return;
+    ch.scenes = ch.scenes.filter(s => s.id !== sceneId);
+    delete state.chatHistory[sceneId];
+    // If we deleted the active scene, switch to the last one
+    if (ch.activeSceneId === sceneId) {
+        ch.activeSceneId = ch.scenes[ch.scenes.length - 1].id;
+    }
+    saveState(); renderSceneTabs(); renderChat(); updateSceneBadge();
+}
+function updateSceneBadge() {
+    const ch = state.chapters.find(c => c.id === state.activeChapterId);
+    const badgeEl = document.getElementById('badge-scene-name');
+    if (!badgeEl || !ch) return;
+    const sc = (ch.scenes || []).find(s => s.id === ch.activeSceneId);
+    badgeEl.innerText = sc ? (sc.label || 'Untitled') : '—';
 }
 
 // ─────────────────────────────────────────
@@ -1659,7 +1780,7 @@ function renderChat() {
         container.innerHTML = `<div style="text-align:center;color:var(--muted);margin-top:50px;"><p>Go to Cast and select a character to begin.</p></div>`;
         return;
     }
-    const messages = state.chatHistory[state.activeChapterId] || [];
+    const messages = state.chatHistory[getActiveSceneId()] || [];
     if (messages.length === 0) {
         container.innerHTML = `<div style="text-align:center;color:var(--muted);margin-top:50px;"><p>Start of conversation with <strong>${char.name}</strong>.</p></div>`;
         return;
@@ -1728,28 +1849,31 @@ function clearChatHistory() {
 }
 
 function clearChatHistorySafe() {
-    const msgs   = state.chatHistory[state.activeChapterId] || [];
-    const count  = msgs.length;
-    const ch     = state.chapters.find(c => c.id === state.activeChapterId);
-    const title  = ch ? ch.title : 'this chapter';
-    if (!confirm(`Delete ALL ${count} messages in "${title}"?\n\nThis cannot be undone. Make sure you have a backup.`)) return;
+    const sceneId = getActiveSceneId();
+    const msgs    = state.chatHistory[sceneId] || [];
+    const count   = msgs.length;
+    const ch      = state.chapters.find(c => c.id === state.activeChapterId);
+    const sc      = ch && (ch.scenes || []).find(s => s.id === sceneId);
+    const label   = sc ? sc.label : 'this scene';
+    if (!confirm(`Delete ALL ${count} messages in "${label}"?\n\nThis cannot be undone. Make sure you have a backup.`)) return;
     if (!confirm(`Are you sure? This will permanently delete ${count} messages.`)) return;
-    state.chatHistory[state.activeChapterId] = [];
+    state.chatHistory[sceneId] = [];
+    if (sc) sc.messageCount = 0;
     saveState(); renderChat();
-    showToast('Chat history cleared');
+    showToast('Scene history cleared');
 }
 
-// v1.2.2y: nudge user to start a new chapter when history gets long
+// v1.2.2y: nudge user to start a new scene when history gets long
 const CHAPTER_NUDGE_THRESHOLD = 200; // messages (100 pairs)
 function checkChapterLength() {
-    const msgs = state.chatHistory[state.activeChapterId] || [];
+    const msgs = state.chatHistory[getActiveSceneId()] || [];
     if (msgs.length > 0 && msgs.length % CHAPTER_NUDGE_THRESHOLD === 0) {
-        showToast(`💡 ${msgs.length} messages in this chapter — consider starting a new chapter to keep things fast`);
+        showToast(`💡 ${msgs.length} messages in this scene — consider starting a new scene to keep things fast`);
     }
 }
 
 function copyMsg(btn, idx) {
-    const msgs = state.chatHistory[state.activeChapterId] || [];
+    const msgs = state.chatHistory[getActiveSceneId()] || [];
     const text = msgs[idx] ? msgs[idx].content : '';
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
@@ -1955,7 +2079,7 @@ async function generateDraft(idx) {
     if (sendBtn) { sendBtn.style.display = 'none'; }
     if (copyBtn) { copyBtn.style.display = 'none'; }
 
-    const msgs     = state.chatHistory[state.activeChapterId] || [];
+    const msgs     = state.chatHistory[getActiveSceneId()] || [];
     const provider = source === 'server' ? state.provider : (byok.provider || 'openrouter');
     const model    = source === 'server' ? state.model    : (byok.model    || 'z-ai/glm-4.5-air:free');
 
@@ -2061,7 +2185,7 @@ function closeDraftPanel(idx) {
 // EXPORT / RESTORE
 // ─────────────────────────────────────────
 function exportChat() {
-    const msgs = state.chatHistory[state.activeChapterId] || [];
+    const msgs = state.chatHistory[getActiveSceneId()] || [];
     let text   = `Chat Export — ${new Date().toLocaleString()}\n\n`;
     msgs.forEach(m => { text += `[${m.role.toUpperCase()}]: ${m.content}\n\n`; });
     dl(text, `rp-chat-${Date.now()}.txt`, 'text/plain');
@@ -2136,7 +2260,8 @@ async function sendMessage() {
     const shouldScroll = cc.scrollHeight - cc.scrollTop <= cc.clientHeight + 100;
     input.value = ''; input.style.height = '56px';
 
-    const msgs = state.chatHistory[state.activeChapterId];
+    const msgs = state.chatHistory[getActiveSceneId()];
+    if (!msgs) return showToast('No active scene — go to Chapters and create one');
     msgs.push({ role: 'user', content: text });
     saveState(); renderChat();
     if (shouldScroll) cc.scrollTop = cc.scrollHeight;
@@ -2183,6 +2308,10 @@ async function sendMessage() {
             const toSave = { role: 'assistant', content: aiMsg.content };
             if (aiMsg.reasoning_content) toSave.reasoning_content = aiMsg.reasoning_content;
             msgs.push(toSave);
+            // Keep scene messageCount in sync
+            const _ch = state.chapters.find(c => c.id === state.activeChapterId);
+            const _sc = _ch && (_ch.scenes||[]).find(s => s.id === _ch.activeSceneId);
+            if (_sc) _sc.messageCount = msgs.length;
             saveState(); renderChat();
             checkChapterLength();
         } else {
