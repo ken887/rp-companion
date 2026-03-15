@@ -1,6 +1,13 @@
 // server.js - Railway Backend
 // ─────────────────────────────────────────
 // REVISION HISTORY
+// v1.2.3.1 — Gemini provider support + prompt caching
+//   - Added Gemini 1.5 Flash / Pro / 2.0 Flash handler
+//   - Anthropic prompt caching (anthropic-beta: prompt-caching-1)
+//     system prompt + stale history cached at 90% discount
+//   - Gemini context caching for sessions > 32k tokens
+//   - npm install @google/generative-ai required
+//
 // v1.2.2v — Three fixes:
 //
 //   FIX 1 — DRAFT PROSE STYLE: Server's draftSystemPrompt now explicitly
@@ -24,6 +31,17 @@
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+
+// Gemini SDK — npm install @google/generative-ai
+let GoogleGenerativeAI;
+try {
+  GoogleGenerativeAI = require('@google/generative-ai').GoogleGenerativeAI;
+} catch(e) {
+  console.warn('⚠️  @google/generative-ai not installed — Gemini provider unavailable');
+}
+
+// In-memory Gemini cache store { cacheKey → { cacheName, expiry } }
+const geminiCacheStore = new Map();
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +72,191 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// ─────────────────────────────────────────
+// HANDLER — Anthropic with prompt caching
+// v1.2.3.1: caches system prompt + stale history at ~90% token discount
+// Requires header: anthropic-beta: prompt-caching-1
+// ─────────────────────────────────────────
+async function callAnthropicCached(messages, model, apiKey, maxTokens) {
+  const FRESH_COUNT = 10;
+
+  const systemMsg = messages.find(m => m.role === 'system');
+  const convoMsgs = messages.filter(m => m.role !== 'system');
+
+  // Sanitise consecutive same-role messages (Anthropic requirement)
+  const sanitised = [];
+  for (const msg of convoMsgs) {
+    const prev = sanitised[sanitised.length - 1];
+    if (prev && prev.role === msg.role) {
+      prev.content += '\n\n' + msg.content;
+    } else {
+      sanitised.push({ role: msg.role, content: msg.content });
+    }
+  }
+  if (sanitised.length > 0 && sanitised[sanitised.length - 1].role === 'assistant') {
+    sanitised.push({ role: 'user', content: 'Please continue.' });
+  }
+  if (sanitised.length === 0) sanitised.push({ role: 'user', content: 'Begin.' });
+
+  const staleCount = Math.max(0, sanitised.length - FRESH_COUNT);
+  const staleMsgs  = sanitised.slice(0, staleCount);
+  const freshMsgs  = sanitised.slice(staleCount);
+
+  // Build messages — mark last stale message for caching
+  const builtMessages = [
+    ...staleMsgs.map((m, i) => ({
+      role: m.role,
+      content: i === staleMsgs.length - 1
+        ? [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }]
+        : m.content
+    })),
+    ...freshMsgs.map(m => ({ role: m.role, content: m.content }))
+  ];
+
+  const body = {
+    model,
+    max_tokens: maxTokens ? Math.max(256, maxTokens) : 1024,
+    system: [{
+      type: 'text',
+      text: systemMsg?.content || '',
+      cache_control: { type: 'ephemeral' }
+    }],
+    messages: builtMessages
+  };
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-api-key':         apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta':    'prompt-caching-1'
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const errMsg = data.error?.message || `HTTP ${response.status}`;
+    if (response.status === 429) throw new Error('Rate limit reached — wait a moment and try again');
+    if (response.status === 402) throw new Error('Insufficient credits on your API account');
+    throw new Error(errMsg);
+  }
+
+  const finalText = data?.content?.[0]?.text;
+  if (!finalText) throw new Error('Could not extract text from Anthropic cached response');
+
+  const usage = data.usage;
+  if (usage?.cache_read_input_tokens) {
+    console.log(`💰 Anthropic cache hit: ${usage.cache_read_input_tokens} cached tokens (90% discount)`);
+  }
+  if (usage?.cache_creation_input_tokens) {
+    console.log(`💾 Anthropic cache written: ${usage.cache_creation_input_tokens} tokens cached`);
+  }
+
+  return { finalText, reasoningContent: null };
+}
+
+// ─────────────────────────────────────────
+// HANDLER — Gemini (standard + cached)
+// v1.2.3.1: uses @google/generative-ai SDK
+// Caching activates when stale history > 32k tokens
+// ─────────────────────────────────────────
+async function callGemini(messages, model, apiKey, maxTokens) {
+  if (!GoogleGenerativeAI) {
+    throw new Error('@google/generative-ai not installed. Run: npm install @google/generative-ai on Railway.');
+  }
+
+  const genAI     = new GoogleGenerativeAI(apiKey);
+  const modelName = model || 'gemini-1.5-flash';
+
+  const systemMsg = messages.find(m => m.role === 'system');
+  const convoMsgs = messages.filter(m => m.role !== 'system');
+  if (convoMsgs.length === 0) throw new Error('No conversation messages for Gemini');
+
+  const FRESH_COUNT  = 10;
+  const staleMsgs    = convoMsgs.slice(0, Math.max(0, convoMsgs.length - FRESH_COUNT));
+  const freshMsgs    = convoMsgs.slice(-FRESH_COUNT);
+  const staleTokens  = Math.round(staleMsgs.map(m => m.content).join(' ').length / 4);
+  let   shouldCache  = staleTokens > 32000 && staleMsgs.length > 0;
+
+  console.log(`Gemini: model=${modelName} staleTokens≈${staleTokens} cache=${shouldCache}`);
+
+  function toGeminiHistory(msgs) {
+    return msgs.map(m => ({
+      role:  m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+  }
+
+  let geminiModel;
+
+  if (shouldCache) {
+    const cacheKey = modelName + ':' + staleTokens;
+    const existing = geminiCacheStore.get(cacheKey);
+    const now      = Date.now();
+    let   cacheName;
+
+    if (existing && existing.expiry > now) {
+      cacheName = existing.cacheName;
+      console.log(`💰 Gemini cache reused: ${cacheName}`);
+    } else {
+      try {
+        const cacheBody = {
+          model:    'models/' + modelName,
+          contents: toGeminiHistory(staleMsgs),
+          ttl:      '3600s'
+        };
+        if (systemMsg?.content) {
+          cacheBody.systemInstruction = { parts: [{ text: systemMsg.content }] };
+        }
+        const cacheRes  = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/cachedContents?key=' + apiKey,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cacheBody) }
+        );
+        const cacheData = await cacheRes.json();
+        if (!cacheRes.ok) {
+          console.warn('Gemini cache creation failed — standard fallback:', cacheData.error?.message);
+          shouldCache = false;
+        } else {
+          cacheName = cacheData.name;
+          geminiCacheStore.set(cacheKey, { cacheName, expiry: now + 55 * 60 * 1000 });
+          console.log(`✅ Gemini cache created: ${cacheName}`);
+        }
+      } catch(e) {
+        console.warn('Gemini cache error — standard fallback:', e.message);
+        shouldCache = false;
+      }
+    }
+
+    if (cacheName) {
+      try {
+        geminiModel = genAI.getGenerativeModelFromCachedContent({ name: cacheName });
+      } catch(e) {
+        console.warn('Gemini getGenerativeModelFromCachedContent failed:', e.message);
+        geminiModel = null;
+      }
+    }
+  }
+
+  // Standard path (no cache or cache failed)
+  if (!geminiModel) {
+    geminiModel = genAI.getGenerativeModel({
+      model:             modelName,
+      systemInstruction: systemMsg?.content || ''
+    });
+  }
+
+  const freshHistory = toGeminiHistory(freshMsgs.slice(0, -1));
+  const lastMsg      = freshMsgs[freshMsgs.length - 1];
+  const chat         = geminiModel.startChat({ history: freshHistory });
+  const result       = await chat.sendMessage(lastMsg.content);
+  const text         = result.response.text();
+
+  if (!text) throw new Error('Could not extract text from Gemini response');
+  return { finalText: text, reasoningContent: null };
+}
 
 // ─────────────────────────────────────────
 // HELPER — Build provider config
@@ -204,7 +407,7 @@ async function callApi(provider, apiUrl, headers, body) {
 app.post('/api/chat', async (req, res) => {
   console.log('=== /api/chat ===');
   try {
-    const { provider, model, messages, max_tokens } = req.body;
+    const { provider, model, messages, max_tokens, userApiKey } = req.body;
     console.log('Provider:', provider, '| Model:', model, '| Messages:', messages?.length, '| max_tokens:', max_tokens || 'default');
 
     if (!messages || messages.length === 0)
@@ -218,13 +421,27 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // v1.2.2v: pass max_tokens through to buildProviderConfig
-    const { apiUrl, headers, body } = buildProviderConfig(provider, model, messages, null, max_tokens || null);
+    let finalText, reasoningContent;
 
-    console.log('Calling:', apiUrl, '| max_tokens in body:', body.max_tokens);
-    const { finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body);
+    // ── v1.2.3.1: route Gemini and Anthropic to cached handlers ──
+    if (provider === 'gemini') {
+      const API_KEY = userApiKey?.trim() || process.env.GEMINI_API_KEY;
+      if (!API_KEY) throw new Error('Gemini API key not configured. Add it in BYOK settings or set GEMINI_API_KEY on server.');
+      ({ finalText, reasoningContent } = await callGemini(messages, model, API_KEY, max_tokens || null));
+
+    } else if (provider === 'anthropic') {
+      const API_KEY = userApiKey?.trim() || process.env.ANTHROPIC_API_KEY;
+      if (!API_KEY) throw new Error('Anthropic API Key not configured.');
+      ({ finalText, reasoningContent } = await callAnthropicCached(messages, model, API_KEY, max_tokens || null));
+
+    } else {
+      // OpenRouter, OpenAI, Mancer — existing path unchanged
+      const { apiUrl, headers, body } = buildProviderConfig(provider, model, messages, userApiKey?.trim() || null, max_tokens || null);
+      console.log('Calling:', apiUrl, '| max_tokens in body:', body.max_tokens);
+      ({ finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body));
+    }
+
     console.log('✅ AI #1 success:', finalText.substring(0, 100));
-
     res.json({
       choices: [{ message: { role: 'assistant', content: finalText, reasoning_content: reasoningContent } }]
     });
@@ -317,27 +534,39 @@ STRICT RULES:
       { role: 'user',   content: transcriptUserMsg }
     ];
 
-    // v1.2.2v: pass max_tokens through — respects client's 400-word cap
-    const { apiUrl, headers, body } = buildProviderConfig(
-      provider, model, draftMessages,
-      usingServerKey ? null : userApiKey.trim(),
-      max_tokens || null
-    );
+    // v1.2.3.1: route Gemini and Anthropic to dedicated handlers
+    let finalText, reasoningContent;
+    const draftApiKey = usingServerKey ? null : userApiKey.trim();
 
-    // Thinking suppression for GLM / Mancer models
-    if (provider === 'mancer' || model.toLowerCase().includes('glm')) {
-      body.enable_thinking = false;
-      if (Array.isArray(body.messages)) {
-        const lastMsg = body.messages[body.messages.length - 1];
-        if (lastMsg && lastMsg.role === 'user') {
-          lastMsg.content += '\n/nothink';
+    if (provider === 'gemini') {
+      const API_KEY = draftApiKey || process.env.GEMINI_API_KEY;
+      if (!API_KEY) throw new Error('Gemini API key not configured.');
+      ({ finalText, reasoningContent } = await callGemini(draftMessages, model, API_KEY, max_tokens || null));
+
+    } else if (provider === 'anthropic') {
+      const API_KEY = draftApiKey || process.env.ANTHROPIC_API_KEY;
+      if (!API_KEY) throw new Error('Anthropic API Key not configured.');
+      ({ finalText, reasoningContent } = await callAnthropicCached(draftMessages, model, API_KEY, max_tokens || null));
+
+    } else {
+      // OpenRouter, OpenAI, Mancer — existing path unchanged
+      const { apiUrl, headers, body } = buildProviderConfig(
+        provider, model, draftMessages, draftApiKey, max_tokens || null
+      );
+
+      // Thinking suppression for GLM / Mancer models
+      if (provider === 'mancer' || model.toLowerCase().includes('glm')) {
+        body.enable_thinking = false;
+        if (Array.isArray(body.messages)) {
+          const lastMsg = body.messages[body.messages.length - 1];
+          if (lastMsg && lastMsg.role === 'user') lastMsg.content += '\n/nothink';
         }
+        console.log('Draft: thinking suppressed via enable_thinking:false + /nothink');
       }
-      console.log('Draft: thinking suppressed via enable_thinking:false + /nothink');
-    }
 
-    console.log('Calling Draft API:', apiUrl, '| max_tokens in body:', body.max_tokens);
-    const { finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body);
+      console.log('Calling Draft API:', apiUrl, '| max_tokens in body:', body.max_tokens);
+      ({ finalText, reasoningContent } = await callApi(provider, apiUrl, headers, body));
+    }
     console.log('✅ Draft success:', finalText.substring(0, 120));
 
     res.json({
@@ -365,7 +594,7 @@ app.use((err, req, res, next) => {
 // START
 // ─────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 RP Companion server v1.2.2v running on port ${PORT}`);
+  console.log(`🚀 RP Companion server v1.2.3.1 running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   console.log('');
   console.log('Endpoints:');

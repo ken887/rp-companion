@@ -320,7 +320,7 @@
      SETTINGS
 ══════════════════════════════ -->
 <main id="view-settings" class="view">
-    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.3)</span></h2>
+    <h2>Settings <span style="color:#555;font-size:.78rem;">(v1.2.3.1)</span></h2>
 
     <!-- ── First-run banner ── -->
     <div id="first-run-banner" class="hidden" style="background:#1a2a3a;border:1px solid var(--primary);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
@@ -338,10 +338,11 @@
 
     <div class="setting-group">
         <label>API Provider</label>
-        <select id="setting-provider">
+        <select id="setting-provider" onchange="onMainProviderChange()">
             <option value="openrouter">OpenRouter</option>
             <option value="anthropic">Anthropic (Direct)</option>
             <option value="openai">OpenAI (Direct)</option>
+            <option value="gemini">Google Gemini (Direct)</option>
             <option value="custom">Custom / Other</option>
         </select>
         <div id="custom-provider-row" class="hidden">
@@ -390,12 +391,16 @@
                     <option value="openrouter">OpenRouter</option>
                     <option value="anthropic">Anthropic</option>
                     <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
                 </select>
 
                 <label style="font-size:.8rem;">Model</label>
-                <input type="text" id="byok-model" placeholder="e.g. z-ai/glm-4.5-air:free" oninput="saveBYOK()">
+                <select id="byok-model-preset" onchange="onByokModelPresetChange()" style="margin-bottom:8px;">
+                    <option value="">— pick a preset —</option>
+                </select>
+                <input type="text" id="byok-model" placeholder="or type model name directly" oninput="saveBYOK()">
                 <p style="font-size:.72rem;color:var(--muted);margin-top:-12px;margin-bottom:12px;" id="byok-model-hint">
-                    e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>
+                    Select a preset or type any model string.
                 </p>
 
                 <label style="font-size:.8rem;">Your API Key</label>
@@ -422,12 +427,13 @@
     </div>
 
     <div class="setting-group">
-        <label>Model Name</label>
-        <input type="text" id="setting-model" value="z-ai/glm-4.5-air:free" oninput="debounceSaveSettings()">
-        <p style="font-size:.75rem;color:var(--muted);margin-bottom:0;">
-            <code>z-ai/glm-4.5-air:free</code> (OpenRouter) &nbsp;|&nbsp;
-            <code>claude-sonnet-4-6</code> (Anthropic) &nbsp;|&nbsp;
-            <code>gpt-3.5-turbo</code> (OpenAI)
+        <label>Model</label>
+        <select id="setting-model-preset" onchange="onMainModelPresetChange()" style="margin-bottom:8px;">
+            <option value="">— pick a preset —</option>
+        </select>
+        <input type="text" id="setting-model" placeholder="or type model name directly" oninput="debounceSaveSettings()">
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:0;" id="main-model-hint">
+            Select a preset above or type any model string directly.
         </p>
     </div>
 
@@ -798,9 +804,9 @@
 ══════════════════════════════ -->
 <script>
 // =============================================================================
-// RP Companion v1.2.3
+// RP Companion v1.2.3.1
 //
-// CHANGELOG v1.2.3
+// CHANGELOG v1.2.3.1
 // -----------------
 // FIX 1 — CLEAR CHAT BUTTON REMOVED FROM HEADER (critical mobile safety fix)
 //   The 🗑 Clear Chat button was sitting next to Director's Mode in the chat
@@ -845,10 +851,10 @@
 //   a second toast appears advising them to start a new chapter for best
 //   results. Educates user about context poisoning without forcing action.
 //
-// VERSION: v1.2.2z → v1.2.3
+// VERSION: v1.2.3 → v1.2.3.1
 // =============================================================================
 
-console.log('RP Companion v1.2.3 loaded');
+console.log('RP Companion v1.2.3.1 loaded');
 
 // ─────────────────────────────────────────
 // STATE
@@ -1139,7 +1145,7 @@ function runDiagnostics() {
 
     const lines = [
         `=== RP Companion Diagnostics ===`,
-        `Version:              v1.2.3`,
+        `Version:              v1.2.3.1`,
         ``,
         `--- State Keys ---`,
         `proseStyle:           ${s.proseStyle || '(not set)'}`,
@@ -1409,6 +1415,8 @@ function saveSettings() {
     state.maxWords       = parseInt(document.getElementById('setting-maxwords').value);
     const styleSel       = document.querySelector('input[name="prose-style"]:checked');
     if (styleSel) state.proseStyle = styleSel.value;
+    // Save preferred model for this provider
+    if (state.model) saveModelPref(state.provider, state.model);
     saveState();
 }
 
@@ -1418,7 +1426,7 @@ function debounceSaveSettings() {
 }
 
 function initSettings() {
-    const known = ['openrouter','anthropic','openai'];
+    const known = ['openrouter', 'anthropic', 'openai', 'gemini'];
     const sel   = document.getElementById('setting-provider');
 
     if (state.provider && known.includes(state.provider)) {
@@ -1434,7 +1442,23 @@ function initSettings() {
         document.getElementById('custom-provider-row').classList.add('hidden');
     }
 
-    document.getElementById('setting-model').value          = state.model          || '';
+    // Populate model presets for current provider
+    const currentProvider = sel.value;
+    populateModelPresets('setting-model-preset', currentProvider);
+
+    // Set model value and try to match preset
+    const modelVal    = state.model || '';
+    const modelEl     = document.getElementById('setting-model');
+    const presetSel   = document.getElementById('setting-model-preset');
+    if (modelEl) modelEl.value = modelVal;
+    if (presetSel && modelVal) {
+        const match = Array.from(presetSel.options).find(o => o.value === modelVal);
+        presetSel.value = match ? modelVal : '';
+    }
+
+    const hintEl = document.getElementById('main-model-hint');
+    if (hintEl) hintEl.innerHTML = MODEL_HINTS[currentProvider] || '';
+
     document.getElementById('setting-sys-template').value   = state.systemTemplate || defaultState.systemTemplate;
     document.getElementById('setting-bible-toggle').checked = state.bibleToggle !== false;
     document.getElementById('setting-context').value        = state.contextWindow  || 15;
@@ -1442,8 +1466,7 @@ function initSettings() {
     document.getElementById('setting-maxwords').value       = state.maxWords != null ? state.maxWords : 600;
     updateMaxWordsValue();
 
-    // Load prose style radio
-    const styleVal = state.proseStyle || 'literary';
+    const styleVal   = state.proseStyle || 'literary';
     const styleRadio = document.getElementById(`style-${styleVal}`);
     if (styleRadio) styleRadio.checked = true;
     updateStyleBadge();
@@ -1452,14 +1475,8 @@ function initSettings() {
     document.getElementById('first-run-banner').classList.toggle('hidden', !isFirstRun);
 }
 
-function handleProviderChange() {
-    const p = document.getElementById('setting-provider').value;
-    document.getElementById('custom-provider-row').classList.toggle('hidden', p !== 'custom');
-    const defaults = { openrouter:'z-ai/glm-4.5-air:free', anthropic:'claude-sonnet-4-6', openai:'gpt-3.5-turbo', custom:'' };
-    if (state.provider !== p && defaults[p] !== undefined)
-        document.getElementById('setting-model').value = defaults[p];
-    debounceSaveSettings();
-}
+// Legacy handler kept for compatibility — now delegates to onMainProviderChange
+function handleProviderChange() { onMainProviderChange(); }
 
 function updateRangeValue() {
     document.getElementById('ctx-val').innerText = document.getElementById('setting-context').value;
@@ -1887,20 +1904,112 @@ function copyMsg(btn, idx) {
 }
 
 // ─────────────────────────────────────────
+// MODEL PRESETS — v1.2.3.1
+// Per-provider preset list. User picks from dropdown or types custom.
+// Preferred model per provider saved in localStorage under 'rp-model-prefs'
+// ─────────────────────────────────────────
+const MODEL_PRESETS = {
+    openrouter: [
+        { label: 'GLM-4.5 Air (Free)',        value: 'z-ai/glm-4.5-air:free' },
+        { label: 'GPT-4o Mini',               value: 'openai/gpt-4o-mini' },
+        { label: 'Claude Haiku (via OR)',      value: 'anthropic/claude-haiku-4-5-20251001' },
+        { label: 'Mistral 7B (Free)',          value: 'mistralai/mistral-7b-instruct:free' },
+        { label: 'Llama 3 8B (Free)',          value: 'meta-llama/llama-3-8b-instruct:free' },
+    ],
+    anthropic: [
+        { label: 'Claude Haiku 4.5 ⭐ Recommended', value: 'claude-haiku-4-5-20251001' },
+        { label: 'Claude Sonnet 4.6 (Premium)',      value: 'claude-sonnet-4-6' },
+    ],
+    openai: [
+        { label: 'GPT-4o Mini ⭐ Recommended', value: 'gpt-4o-mini' },
+        { label: 'GPT-4o',                    value: 'gpt-4o' },
+        { label: 'GPT-3.5 Turbo',             value: 'gpt-3.5-turbo' },
+    ],
+    gemini: [
+        { label: 'Gemini 2.0 Flash ⭐ Recommended', value: 'gemini-2.0-flash' },
+        { label: 'Gemini 1.5 Flash (Cheap)',         value: 'gemini-1.5-flash' },
+        { label: 'Gemini 1.5 Pro (Quality)',         value: 'gemini-1.5-pro' },
+    ],
+    custom: []
+};
+
+const MODEL_HINTS = {
+    openrouter: 'Free models available at <a href="https://openrouter.ai/models" target="_blank" style="color:var(--primary);">openrouter.ai/models</a>',
+    anthropic:  'Haiku = cheapest. Caching active — stale history discounted ~90%.',
+    openai:     'GPT-4o Mini is recommended for cost.',
+    gemini:     'Gemini 2.0 Flash is fastest and cheapest. Caching active for long sessions.',
+    custom:     'Must match a provider key configured on the server.'
+};
+
+// Load and save per-provider preferred model
+function getModelPrefs()          { return JSON.parse(localStorage.getItem('rp-model-prefs') || '{}'); }
+function saveModelPref(provider, model) {
+    const prefs = getModelPrefs();
+    prefs[provider] = model;
+    localStorage.setItem('rp-model-prefs', JSON.stringify(prefs));
+}
+
+// Populate a preset <select> for a given provider
+function populateModelPresets(selectId, provider) {
+    const sel      = document.getElementById(selectId);
+    if (!sel) return;
+    const presets  = MODEL_PRESETS[provider] || [];
+    sel.innerHTML  = '<option value="">— pick a preset —</option>';
+    presets.forEach(p => {
+        const opt   = document.createElement('option');
+        opt.value   = p.value;
+        opt.text    = p.label;
+        sel.appendChild(opt);
+    });
+}
+
+// ─────────────────────────────────────────
+// MAIN PROVIDER / MODEL (AI #1)
+// ─────────────────────────────────────────
+function onMainProviderChange() {
+    const provider = document.getElementById('setting-provider')?.value;
+    const known    = ['openrouter', 'anthropic', 'openai', 'gemini'];
+    const customRow = document.getElementById('custom-provider-row');
+    if (customRow) customRow.classList.toggle('hidden', provider !== 'custom');
+
+    populateModelPresets('setting-model-preset', provider);
+
+    // Restore saved preferred model for this provider
+    const prefs     = getModelPrefs();
+    const modelEl   = document.getElementById('setting-model');
+    const hintEl    = document.getElementById('main-model-hint');
+
+    if (prefs[provider]) {
+        if (modelEl) modelEl.value = prefs[provider];
+        // Try to match preset
+        const presetSel = document.getElementById('setting-model-preset');
+        if (presetSel) {
+            const match = Array.from(presetSel.options).find(o => o.value === prefs[provider]);
+            presetSel.value = match ? prefs[provider] : '';
+        }
+    } else {
+        // Default to first preset
+        const presets = MODEL_PRESETS[provider] || [];
+        if (modelEl) modelEl.value = presets[0]?.value || '';
+        const presetSel = document.getElementById('setting-model-preset');
+        if (presetSel && presets[0]) presetSel.value = presets[0].value;
+    }
+
+    if (hintEl) hintEl.innerHTML = MODEL_HINTS[provider] || '';
+    debounceSaveSettings();
+}
+
+function onMainModelPresetChange() {
+    const val     = document.getElementById('setting-model-preset')?.value;
+    if (!val) return;
+    const modelEl = document.getElementById('setting-model');
+    if (modelEl) modelEl.value = val;
+    debounceSaveSettings();
+}
+
+// ─────────────────────────────────────────
 // BYOK — Bring Your Own Key
 // ─────────────────────────────────────────
-const BYOK_MODEL_HINTS = {
-    openrouter: 'e.g. <code>z-ai/glm-4.5-air:free</code> or <code>openai/gpt-4o-mini</code>',
-    anthropic:  'e.g. <code>claude-sonnet-4-6</code> or <code>claude-haiku-4-5-20251001</code>',
-    openai:     'e.g. <code>gpt-4o-mini</code> or <code>gpt-3.5-turbo</code>'
-};
-
-const BYOK_MODEL_DEFAULTS = {
-    openrouter: 'z-ai/glm-4.5-air:free',
-    anthropic:  'claude-sonnet-4-6',
-    openai:     'gpt-4o-mini'
-};
-
 function loadBYOK() {
     const byok = JSON.parse(localStorage.getItem('rp-byok') || '{}');
 
@@ -1910,8 +2019,20 @@ function loadBYOK() {
 
     const providerEl = document.getElementById('byok-provider');
     if (providerEl) providerEl.value = byok.provider || 'openrouter';
+
+    // Populate presets for saved provider
+    populateModelPresets('byok-model-preset', byok.provider || 'openrouter');
+
     const modelEl = document.getElementById('byok-model');
     if (modelEl) modelEl.value = byok.model || 'z-ai/glm-4.5-air:free';
+
+    // Match preset dropdown to saved model
+    const presetSel = document.getElementById('byok-model-preset');
+    if (presetSel && byok.model) {
+        const match = Array.from(presetSel.options).find(o => o.value === byok.model);
+        presetSel.value = match ? byok.model : '';
+    }
+
     const keyEl = document.getElementById('byok-key');
     if (keyEl) keyEl.value = byok.key || '';
 
@@ -1926,7 +2047,49 @@ function saveBYOK() {
     const model    = document.getElementById('byok-model')?.value.trim() || '';
     const key      = document.getElementById('byok-key')?.value.trim() || '';
     localStorage.setItem('rp-byok', JSON.stringify({ keySource: source, provider, model, key }));
+    // Save as preferred model for this provider
+    if (model) saveModelPref(provider, model);
     updateBYOKStatus();
+}
+
+function onByokModelPresetChange() {
+    const val     = document.getElementById('byok-model-preset')?.value;
+    if (!val) return;
+    const modelEl = document.getElementById('byok-model');
+    if (modelEl) modelEl.value = val;
+    saveBYOK();
+}
+
+function onByokProviderChange() {
+    const provider  = document.getElementById('byok-provider')?.value || 'openrouter';
+    populateModelPresets('byok-model-preset', provider);
+
+    // Restore preferred model for this provider
+    const prefs   = getModelPrefs();
+    const modelEl = document.getElementById('byok-model');
+
+    if (prefs[provider]) {
+        if (modelEl) modelEl.value = prefs[provider];
+        const presetSel = document.getElementById('byok-model-preset');
+        if (presetSel) {
+            const match = Array.from(presetSel.options).find(o => o.value === prefs[provider]);
+            presetSel.value = match ? prefs[provider] : '';
+        }
+    } else {
+        const presets = MODEL_PRESETS[provider] || [];
+        if (modelEl) modelEl.value = presets[0]?.value || '';
+        const presetSel = document.getElementById('byok-model-preset');
+        if (presetSel && presets[0]) presetSel.value = presets[0].value;
+    }
+
+    updateByokModelHint();
+    saveBYOK();
+}
+
+function updateByokModelHint() {
+    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
+    const hintEl   = document.getElementById('byok-model-hint');
+    if (hintEl) hintEl.innerHTML = MODEL_HINTS[provider] || '';
 }
 
 function clearBYOK() {
@@ -1959,29 +2122,15 @@ function onDraftKeySourceChange() {
     const serverNotice = document.getElementById('byok-server-notice');
     if (byokFields)   byokFields.style.display   = source === 'byok'   ? 'block' : 'none';
     if (serverNotice) serverNotice.style.display  = source === 'server' ? 'block' : 'none';
-    saveBYOK();
-}
-
-function onByokProviderChange() {
-    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
-    const modelEl  = document.getElementById('byok-model');
-    if (modelEl) modelEl.value = BYOK_MODEL_DEFAULTS[provider] || '';
-    updateByokModelHint();
-    saveBYOK();
-}
-
-function updateByokModelHint() {
-    const provider = document.getElementById('byok-provider')?.value || 'openrouter';
-    const hint     = document.getElementById('byok-model-hint');
-    if (hint) hint.innerHTML = BYOK_MODEL_HINTS[provider] || '';
 }
 
 function toggleBYOKVisibility() {
-    const input = document.getElementById('byok-key');
-    const btn   = document.getElementById('byok-toggle-vis');
-    if (!input || !btn) return;
-    if (input.type === 'password') { input.type = 'text';     btn.innerText = 'Hide'; }
-    else                           { input.type = 'password'; btn.innerText = 'Show'; }
+    const keyEl    = document.getElementById('byok-key');
+    const toggleEl = document.getElementById('byok-toggle-vis');
+    if (!keyEl) return;
+    const isHidden = keyEl.type === 'password';
+    keyEl.type     = isHidden ? 'text' : 'password';
+    if (toggleEl) toggleEl.innerText = isHidden ? 'Hide' : 'Show';
 }
 
 function getBYOK() {
